@@ -6,18 +6,26 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `15e6c63`
+- 最新发布提交 / Latest Release Commit: `4fb5d03`
 - 提交日期 / Commit date: 2026-06-27
-- 提交说明 / Commit subject: Close OTA worker database on skipped duplicate
-- 最新 tag / Latest tag: `v0.9.4`
+- 提交说明 / Commit subject: Release v0.9.5
+- 最新 tag / Latest tag: `v0.9.5`
 
 ## 未发布变更 / Unreleased Changes
 
-### 修复与稳定性 / Fixes and Stability
-
-- Fix themed surface transparency `58446d0`
+- 该 tag 与相邻 tag 指向同一提交，未产生额外 Git commit。
 
 ## 历史版本 / Historical Versions
+
+## v0.9.5
+
+- 发布提交 / Release commit: `4fb5d03`
+- 提交日期 / Commit date: 2026-06-27
+- 提交说明 / Commit subject: Release v0.9.5
+
+Fix themed surface transparency so admin risk evidence drawers and themed cards render with solid backgrounds.
+
+Keep docs version logs focused on real release changes by filtering handoff and version-log sync commits from unreleased changes.
 
 ## v0.9.4
 

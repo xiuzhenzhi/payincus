@@ -6,18 +6,26 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Latest Release State / 最新发布状态
 
-- Latest Release Commit / 最新发布提交: `15e6c63`
+- Latest Release Commit / 最新发布提交: `4fb5d03`
 - Commit date / 提交日期: 2026-06-27
-- Commit subject / 提交说明: Close OTA worker database on skipped duplicate
-- Latest tag / 最新 tag: `v0.9.4`
+- Commit subject / 提交说明: Release v0.9.5
+- Latest tag / 最新 tag: `v0.9.5`
 
 ## Unreleased Changes / 未发布变更
 
-### Fixes and Stability / 修复与稳定性
-
-- Fix themed surface transparency `58446d0`
+- This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
 
 ## Historical Versions / 历史版本
+
+## v0.9.5
+
+- Release commit / 发布提交: `4fb5d03`
+- Commit date / 提交日期: 2026-06-27
+- Commit subject / 提交说明: Release v0.9.5
+
+Fix themed surface transparency so admin risk evidence drawers and themed cards render with solid backgrounds.
+
+Keep docs version logs focused on real release changes by filtering handoff and version-log sync commits from unreleased changes.
 
 ## v0.9.4
 
