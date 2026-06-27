@@ -6,15 +6,16 @@
 
 ## 当前源码状态 / Current Source State
 
-- 当前 HEAD / Current HEAD: `66d286a`
+- 当前 HEAD / Current HEAD: `1482aa9`
 - 提交日期 / Commit date: 2026-06-27
-- 提交说明 / Commit subject: Establish PayIncus project baseline
+- 提交说明 / Commit subject: Release v0.8.8
 - 最新 tag / Latest tag: `v0.8.7`
 
 ## 未发布变更 / Unreleased Changes
 
 ### 其他变更 / Other Changes
 
+- Release v0.8.8 `1482aa9`
 - Establish PayIncus project baseline `66d286a`
 
 ## 历史版本 / Historical Versions
