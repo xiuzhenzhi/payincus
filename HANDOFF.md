@@ -19,7 +19,7 @@ This file is a handoff note for a new Codex conversation. Do not include server 
 Use `git log --oneline --decorate -5` as the authoritative current HEAD because this handoff may receive handoff-only commits after product releases. The latest product/docs release baseline at the time of this refresh was:
 
 ```text
-359501c Update version log for v0.8.8
+bf3d86e Update version log for v0.8.9
 ```
 
 GitHub remote `payincus/main` was aligned after the handoff refresh commits.
@@ -29,23 +29,23 @@ The tracked tree should be clean against `payincus/main` after pulling. The loca
 Latest tracked repository commit at the time of this refresh:
 
 ```text
-359501c Update version log for v0.8.8
+bf3d86e Update version log for v0.8.9
 ```
 
 ## Latest Production OTA Proof
 
-- Production version: `v0.8.8`
-- Release tag commit: `359501c1294d`
-- Current production symlink: `/opt/incudal/current -> /opt/incudal/releases/v0.8.8-20260627070501`
-- OTA task: `92`, status `success`, completed at `2026-06-27T07:06:32Z`; backup path `/opt/incudal/releases/v0.8.7-20260627054123`.
-- GitHub Actions: `Build & Release` for `v0.8.8` succeeded, `CI` on `main` succeeded, docs Pages deployment succeeded.
+- Production version: `v0.8.9`
+- Release tag commit: `bf3d86ec83ed`
+- Current production symlink: `/opt/incudal/current -> /opt/incudal/releases/v0.8.9-20260627074826`
+- OTA task: `93`, status `success`, completed at `2026-06-27T07:49:57Z`; backup path `/opt/incudal/releases/v0.8.8-20260627070501`.
+- GitHub Actions: `Build & Release` for `v0.8.9` succeeded, `CI` on `main` succeeded, docs Pages deployment succeeded.
 - Release assets verified: linux amd64/arm64 tarballs, sha256 files, OTA manifest, and marketplace assets.
 - Production checks passed during OTA: split host verification, `pnpm verify:production`, `pnpm verify:log-header`.
 - Independent checks after OTA:
   - `https://pay.payincus.com/api/health` returned HTTP 200.
   - Local backend health `http://127.0.0.1:3001/api/health` returned HTTP 200.
   - `systemctl is-active incudal-backend` returned `active`.
-  - `package.json` under `/opt/incudal/current` reports `0.8.8`.
+  - `package.json` under `/opt/incudal/current` reports `0.8.9`.
   - OTA log shows `System update completed successfully`.
 
 ## Latest Independence / Docs Release Work
@@ -62,7 +62,7 @@ Latest tracked repository commit at the time of this refresh:
 
 Known follow-up:
 
-- `pnpm verify:production` still warns that public package `HKCMI` is active but online bound hosts cannot satisfy its minimum CPU/memory requirement. This is an existing capacity/business configuration warning, not a v0.8.8 deployment failure.
+- `pnpm verify:production` still warns that public package `HKCMI` is active but online bound hosts cannot satisfy its minimum CPU/memory requirement. This is an existing capacity/business configuration warning, not a v0.8.9 deployment failure.
 
 ## Latest Instance Upgrade Work
 
@@ -100,9 +100,25 @@ Known follow-up:
 - Admins can manually restrict the linked account from ordering when a specific instance needs ticket review.
 - Backend validation rejects invalid QoS tiers, invalid scores, missing manual reasons, and invalid manual bandwidth values.
 
+`v0.8.9` refined the resource risk center operations UI:
+
+- Instance, event, and order restriction tables now paginate at 10 rows per page and recover to the last valid page after row removal.
+- Instance action buttons now reflect current state: suspended instances show unsuspend, active source-scoped restrictions show release order restriction, and unrelated account restrictions show a disabled account-restricted state.
+- Manual order restriction release is now source-scoped. Releasing a restriction from one risk instance only releases that instance's active restriction record, and no longer presents every risky instance under the same account as independently releasable.
+- Backend instance list now returns both the current instance's active order restriction and the linked account's newest active restriction so the UI can distinguish same-source and other-source account restrictions.
+
 Recently updated/released files include:
 
 ```text
+client/src/api/admin.ts
+client/src/views/admin/ResourceRiskView.vue
+server/src/routes/resource-risk.ts
+server/scripts/test-resource-risk-guards.ts
+package.json
+client/package.json
+server/package.json
+docs-site/docs/release/version-log.md
+docs-site/docs/en/release/version-log.md
 client/src/views/admin/BillingView.vue
 client/src/components/instance/modals/ChangePlanModal.vue
 client/src/types/api.ts
