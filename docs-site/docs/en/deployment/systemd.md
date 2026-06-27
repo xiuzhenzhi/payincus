@@ -1,0 +1,104 @@
+# systemd Service
+
+Production should run the backend under systemd and start OTA update/rollback work through narrow oneshot templates. The backend service is long-running; online update and rollback services run per task ID.
+
+## Backend Service
+
+Template:
+
+```text
+deploy/incudal-backend.service.example
+```
+
+Install:
+
+```bash
+sudo cp deploy/incudal-backend.service.example /etc/systemd/system/incudal-backend.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now incudal-backend
+sudo systemctl status incudal-backend --no-pager
+```
+
+Important runtime settings:
+
+```text
+User=incudal
+Group=incudal
+WorkingDirectory=/opt/incudal/current
+EnvironmentFile=/opt/incudal/.env
+ExecStartPre=cd /opt/incudal/current/server && pnpm exec prisma migrate deploy
+ExecStart=/usr/bin/node /opt/incudal/current/server/dist/app.js
+```
+
+`WorkingDirectory` points to `/opt/incudal/current`, so after OTA switches the symlink a service restart enters the new release.
+
+## Permission Boundary
+
+The backend template uses `ProtectSystem=strict` and `ProtectHome=true`, with write access limited to PayIncus runtime directories:
+
+```text
+/opt/incudal
+/opt/incudal/current
+/opt/incudal/releases
+/opt/incudal/update-logs
+/opt/incudal/plugins
+/opt/incudal/plugin-data
+/opt/incudal/plugin-logs
+/opt/incudal/plugin-staging
+```
+
+Do not add `/`, `/etc` or database directories to `ReadWritePaths`. Payment secrets, database URLs, OAuth secrets, SMTP passwords and install tokens should live only in `/opt/incudal/.env` or encrypted admin configuration.
+
+## Online Update Services
+
+Templates:
+
+```text
+deploy/incudal-online-update@.service.example
+deploy/incudal-online-rollback@.service.example
+```
+
+Install:
+
+```bash
+sudo cp deploy/incudal-online-update@.service.example /etc/systemd/system/incudal-online-update@.service
+sudo cp deploy/incudal-online-rollback@.service.example /etc/systemd/system/incudal-online-rollback@.service
+sudo systemctl daemon-reload
+```
+
+The admin OTA worker creates a task ID and starts:
+
+```text
+systemctl start --no-block incudal-online-update@<taskId>.service
+systemctl start --no-block incudal-online-rollback@<taskId>.service
+```
+
+## Restricted sudoers
+
+```bash
+printf 'Defaults:incudal !requiretty\nincudal ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block incudal-online-update@*.service, /usr/bin/systemctl start --no-block incudal-online-rollback@*.service\n' \
+  | sudo tee /etc/sudoers.d/incudal-online-update >/dev/null
+sudo chmod 440 /etc/sudoers.d/incudal-online-update
+sudo visudo -cf /etc/sudoers.d/incudal-online-update
+```
+
+This only lets the `incudal` service user start the update and rollback oneshot services. It does not grant arbitrary root shell access.
+
+## Logs
+
+```bash
+sudo journalctl -u incudal-backend -n 200 --no-pager
+sudo journalctl -u 'incudal-online-update@*' -n 200 --no-pager
+sudo journalctl -u 'incudal-online-rollback@*' -n 200 --no-pager
+```
+
+Admin OTA task logs are also written under `SYSTEM_UPDATE_LOG_DIR`, which defaults to `/opt/incudal/update-logs`.
+
+## Verification
+
+```bash
+systemctl is-active incudal-backend
+curl -fsS http://127.0.0.1:3001/api/health
+```
+
+If startup fails, inspect `journalctl -u incudal-backend`, then verify `/opt/incudal/.env`, database connectivity, the `/opt/incudal/current` symlink, and `server/dist/app.js`.
