@@ -34,7 +34,7 @@ Latest tracked repository commit at the time of this refresh:
 
 ## Latest GitHub Release Work
 
-`v0.9.0` is published on GitHub and has release artifacts. This is not yet production-proven OTA in this handoff; production remains on `v0.8.9` until the admin/system-update flow or equivalent server update applies it and live proof is recorded.
+`v0.9.0` is published on GitHub, has release artifacts, and has been applied to production through the online update flow.
 
 Release commits:
 
@@ -87,28 +87,28 @@ OAuth/mail/payment secret handling, refresh token storage, plugin/runtime,
 resource risk, and integration health passed during the working session.
 ```
 
-Remaining before calling production `v0.9.0` complete:
+Remaining before calling the whole commercial-operation objective complete:
 
-- Run production OTA from the admin system-update flow or equivalent release process.
-- Verify `/opt/incudal/current/package.json` reports `0.9.0`.
-- Record the OTA task id, release symlink, backup path, update logs, backend service state, and public health checks.
-- Verify production with real `/opt/incudal/.env`, live domains, database checks, split-host checks, and final proof refs. The latest local `verify:production` run intentionally used `RUN_LIVE_CHECKS=0 RUN_DB_CHECKS=0`, so it proves static readiness only.
+- Optional final-acceptance proof refs are still not collected for a fresh real payment/log-header proof run. Production OTA itself is complete and verified.
+- Keep watching the high-risk surfaces touched by `v0.9.0`: Integration Center health checks, manual recharge, refund/reconciliation workbench, extension capability review blocking, delivery/plan-upgrade sync repair, and split user/admin login boundaries.
 
 ## Latest Production OTA Proof
 
-- Production version: `v0.8.9`
-- Release tag commit: `bf3d86ec83ed`
-- Current production symlink: `/opt/incudal/current -> /opt/incudal/releases/v0.8.9-20260627074826`
-- OTA task: `93`, status `success`, completed at `2026-06-27T07:49:57Z`; backup path `/opt/incudal/releases/v0.8.8-20260627070501`.
-- GitHub Actions: `Build & Release` for `v0.8.9` succeeded, `CI` on `main` succeeded, docs Pages deployment succeeded.
+- Production version: `v0.9.0`
+- Release tag commit: `aa087db`
+- Current production symlink: `/opt/incudal/current -> /opt/incudal/releases/v0.9.0-20260627113344`
+- OTA task: `94`, status `success`, completed at `2026-06-27T11:35:14.559Z`; backup path `/opt/incudal/releases/v0.8.9-20260627074826`; log path `/opt/incudal/update-logs/system-update-94.log`.
+- GitHub Actions: `Build & Release` for `v0.9.0` succeeded, `CI` on `main` succeeded, docs Pages deployment succeeded.
 - Release assets verified: linux amd64/arm64 tarballs, sha256 files, OTA manifest, and marketplace assets.
 - Production checks passed during OTA: split host verification, `pnpm verify:production`, `pnpm verify:log-header`.
 - Independent checks after OTA:
   - `https://pay.payincus.com/api/health` returned HTTP 200.
+  - `https://admin.payincus.com/api/health` returned HTTP 200.
   - Local backend health `http://127.0.0.1:3001/api/health` returned HTTP 200.
   - `systemctl is-active incudal-backend` returned `active`.
-  - `package.json` under `/opt/incudal/current` reports `0.8.9`.
+  - `package.json` under `/opt/incudal/current` reports `0.9.0`.
   - OTA log shows `System update completed successfully`.
+  - Fresh post-OTA checks from `/opt/incudal/releases/v0.9.0-20260627113344` passed: `pnpm verify:production` and `pnpm verify:log-header`.
 
 ## Latest Independence / Docs Release Work
 
