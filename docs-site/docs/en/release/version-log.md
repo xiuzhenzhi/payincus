@@ -6,14 +6,17 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Current Source State / 当前源码状态
 
-- Current HEAD / 当前 HEAD: `15e6c63`
+- Current HEAD / 当前 HEAD: `a465155`
 - Commit date / 提交日期: 2026-06-27
-- Commit subject / 提交说明: Close OTA worker database on skipped duplicate
+- Commit subject / 提交说明: Update handoff after v0.9.4 OTA
 - Latest tag / 最新 tag: `v0.9.4`
 
 ## Unreleased Changes / 未发布变更
 
-- This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
+### Improvements and Adjustments / 改进与调整
+
+- Update handoff after v0.9.4 OTA `a465155`
+- Update version log for v0.9.4 `5c4bb3b`
 
 ## Historical Versions / 历史版本
 
