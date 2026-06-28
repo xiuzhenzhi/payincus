@@ -6,7 +6,7 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Latest Release State / 最新发布状态
 
-- Latest Release Commit / 最新发布提交: `dfe536b10`
+- Latest Release Commit / 最新发布提交: `08362032d`
 - Commit date / 提交日期: 2026-06-28
 - Commit subject / 提交说明: Release v1.0.2 welfare check-in
 - Latest tag / 最新 tag: `v1.0.2`
@@ -19,7 +19,7 @@ This page is generated from Git tags and commits to show system version history.
 
 ## v1.0.2
 
-- Release commit / 发布提交: `dfe536b10`
+- Release commit / 发布提交: `08362032d`
 - Commit date / 提交日期: 2026-06-28
 - Commit subject / 提交说明: Release v1.0.2 welfare check-in
 

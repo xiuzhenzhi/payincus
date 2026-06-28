@@ -6,7 +6,7 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `dfe536b10`
+- 最新发布提交 / Latest Release Commit: `08362032d`
 - 提交日期 / Commit date: 2026-06-28
 - 提交说明 / Commit subject: Release v1.0.2 welfare check-in
 - 最新 tag / Latest tag: `v1.0.2`
@@ -19,7 +19,7 @@
 
 ## v1.0.2
 
-- 发布提交 / Release commit: `dfe536b10`
+- 发布提交 / Release commit: `08362032d`
 - 提交日期 / Commit date: 2026-06-28
 - 提交说明 / Commit subject: Release v1.0.2 welfare check-in
 
