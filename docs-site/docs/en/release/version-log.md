@@ -6,16 +6,30 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Latest Release State / 最新发布状态
 
-- Latest Release Commit / 最新发布提交: `09670ad88`
-- Commit date / 提交日期: 2026-06-28
-- Commit subject / 提交说明: Release v1.0.3 package delivery hotfix
-- Latest tag / 最新 tag: `v1.0.3`
+- Latest Release Commit / 最新发布提交: `2bd25ba5a`
+- Commit date / 提交日期: 2026-06-29
+- Commit subject / 提交说明: Release v1.0.4 resource risk policy hardening
+- Latest tag / 最新 tag: `v1.0.4`
 
 ## Unreleased Changes / 未发布变更
 
 - This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
 
 ## Historical Versions / 历史版本
+
+## v1.0.4
+
+- Release commit / 发布提交: `2bd25ba5a`
+- Commit date / 提交日期: 2026-06-29
+- Commit subject / 提交说明: Release v1.0.4 resource risk policy hardening
+
+Expand the Resource Risk policy model with recover scores, minimum QoS duration, downgrade cooldowns, per-tier notification flags, per-tier order restriction flags and a continue-downgrade switch.
+
+Add a read-only policy simulation endpoint and admin UI result panel so operators can preview impacted instances, QoS hits, order restrictions and auto-suspensions before saving a strategy.
+
+Harden automatic evaluation so manual QoS and manual suspension states are preserved until an operator releases them, QoS recovery restores the original bandwidth after recovery thresholds, and offline hosts do not falsely mark unapplied QoS as active.
+
+Add a dedicated resource-risk QoS notification template and show users an upfront create-instance warning with a review ticket action when their account is under an active resource-risk order restriction.
 
 ## v1.0.3
 
