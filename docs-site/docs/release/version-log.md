@@ -6,16 +6,24 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `5c8d3b8e1`
+- 最新发布提交 / Latest Release Commit: `82275d089`
 - 提交日期 / Commit date: 2026-06-29
-- 提交说明 / Commit subject: Release v1.0.6 flash sale editing
-- 最新 tag / Latest tag: `v1.0.6`
+- 提交说明 / Commit subject: Release v1.0.7 instance verification
+- 最新 tag / Latest tag: `v1.0.7`
 
 ## 未发布变更 / Unreleased Changes
 
 - 该 tag 与相邻 tag 指向同一提交，未产生额外 Git commit。
 
 ## 历史版本 / Historical Versions
+
+## v1.0.7
+
+- 发布提交 / Release commit: `82275d089`
+- 提交日期 / Commit date: 2026-06-29
+- 提交说明 / Commit subject: Release v1.0.7 instance verification
+
+- 该 tag 与相邻 tag 指向同一提交，未产生额外 Git commit。
 
 ## v1.0.6
 

@@ -6,16 +6,24 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Latest Release State / 最新发布状态
 
-- Latest Release Commit / 最新发布提交: `5c8d3b8e1`
+- Latest Release Commit / 最新发布提交: `82275d089`
 - Commit date / 提交日期: 2026-06-29
-- Commit subject / 提交说明: Release v1.0.6 flash sale editing
-- Latest tag / 最新 tag: `v1.0.6`
+- Commit subject / 提交说明: Release v1.0.7 instance verification
+- Latest tag / 最新 tag: `v1.0.7`
 
 ## Unreleased Changes / 未发布变更
 
 - This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
 
 ## Historical Versions / 历史版本
+
+## v1.0.7
+
+- Release commit / 发布提交: `82275d089`
+- Commit date / 提交日期: 2026-06-29
+- Commit subject / 提交说明: Release v1.0.7 instance verification
+
+- This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
 
 ## v1.0.6
 
