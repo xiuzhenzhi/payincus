@@ -1135,6 +1135,7 @@ export default async function adminExchangeRoutes(fastify: FastifyInstance) {
       const policy = await getPolicy()
       const nextPolicy = {
         enabled: Boolean(body.enabled),
+        forceStoppedRequired: true,
         minRemainingDays: normalizeInt(body.minRemainingDays, '最低剩余有效期', 1),
         expiringSoonDays: normalizeInt(body.expiringSoonDays, '即将到期阈值', 1),
         minPrice: normalizeMoney(body.minPrice, '最低售价'),
