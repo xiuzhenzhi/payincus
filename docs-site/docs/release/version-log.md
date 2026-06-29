@@ -6,16 +6,36 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `aaaca037b`
+- 最新发布提交 / Latest Release Commit: `6b371bc07`
 - 提交日期 / Commit date: 2026-06-29
-- 提交说明 / Commit subject: Release v1.1.8 exchange dispute release atomicity
-- 最新 tag / Latest tag: `v1.1.8`
+- 提交说明 / Commit subject: Release v1.1.9 exchange dispute refund atomicity
+- 最新 tag / Latest tag: `v1.1.9`
 
 ## 未发布变更 / Unreleased Changes
 
 - 该 tag 与相邻 tag 指向同一提交，未产生额外 Git commit。
 
 ## 历史版本 / Historical Versions
+
+## v1.1.9
+
+- 发布提交 / Release commit: `6b371bc07`
+- 提交日期 / Commit date: 2026-06-29
+- 提交说明 / Commit subject: Release v1.1.9 exchange dispute refund atomicity
+
+# v1.1.9
+
+## 修复
+
+- 修复交易所后台“争议退款”仍然拆成两段流程的问题：现在买家退款、托管退款流水、订单状态、争议状态关闭、争议冻结解除流水和审计日志在同一个事务内完成。
+- 如果历史版本已经出现“订单已退款但争议仍停留在 processing”的半完成状态，管理员再次处理时会只关闭争议并记录补救审计，不会二次给买家退款。
+- 保持交易所退款规则不变：如果实例已经交割给买家，退款前会先停机并把实例归属、Incus 名称和管理权退回原卖家；退回过程继续保留当前流量用量和剩余额度。
+- `v1.0.0` 正式版公告重写为可发布版本，补齐 0.9.x 到 1.0.0 的生产稳定性、Agent 加固、支付回调策略、资源售罄判断和升级建议。
+
+## 验证
+
+- `pnpm --filter server test:exchange-marketplace-guards`
+- `pnpm --filter server type-check`
 
 ## v1.1.8
 
