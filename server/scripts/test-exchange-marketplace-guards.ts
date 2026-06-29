@@ -1172,6 +1172,8 @@ assert(
 					userExchangeViewSource.includes('查看并购买') &&
 					userExchangeViewSource.includes('{{ statusLabel(listing.status) }}') &&
 					userExchangeViewSource.includes('剩余有效期') &&
+					userExchangeViewSource.includes('<dt class="font-medium text-themed">交割方式</dt>') &&
+					userExchangeViewSource.includes('暂停锁定后强制重装') &&
 					userExchangeViewSource.includes('开始：{{ formatDate(order.deliveryTask.startedAt) }}') &&
 					userExchangeViewSource.includes('平台手续费 {{ money(selectedListing.feeAmount) }}') &&
 					!userExchangeViewSource.includes('卖家预计到账 {{ money(selectedListing.sellerReceivesAmount) }}') &&
