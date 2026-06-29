@@ -33,16 +33,20 @@ const DELIVERY_PROGRESS_STEPS = [
   'complete'
 ] as const
 
-interface DeliveryCleanupSummary extends Record<string, number> {
+interface DeliveryCleanupSummary extends Record<string, Prisma.JsonValue> {
   terminalSessionsClosed: number
   portMappingsRemoved: number
+  portMappingDeviceCleanupFailures: number
   proxySitesRemoved: number
+  proxySiteRemoteCleanupFailures: number
   snapshotsRemoved: number
   snapshotPoliciesRemoved: number
   backupPoliciesRemoved: number
   resourceRiskStateRemoved: number
   resourceRiskEventsRemoved: number
   resourceRiskSamplesRemoved: number
+  cleanupWarnings: number
+  cleanupWarningSamples: string[]
 }
 
 function taskProgress(step: string, extra: Record<string, unknown> = {}) {
@@ -77,6 +81,7 @@ function buildExchangeDisplayName(orderNo: string): string {
 
 async function cleanupLegacyAccess(instanceId: number): Promise<DeliveryCleanupSummary> {
   const terminalSessionsClosed = closeInstanceSessions(instanceId, 'Instance is being delivered through exchange')
+  const cleanupWarnings: string[] = []
 
   const instance = await prisma.instance.findUnique({
     where: { id: instanceId },
@@ -89,10 +94,17 @@ async function cleanupLegacyAccess(instanceId: number): Promise<DeliveryCleanupS
 
   const client = await getIncusClient(host)
   const portMappings = await prisma.portMapping.findMany({ where: { instanceId } })
+  let portMappingDeviceCleanupFailures = 0
   for (const mapping of portMappings) {
     const deviceName = `proxy-${mapping.protocol}-${mapping.publicPort}`
-    await removeDevice(client, instance.incusId, deviceName)
-    await removeDevice(client, instance.incusId, `${deviceName}-v6`)
+    for (const candidate of [deviceName, `${deviceName}-v6`]) {
+      try {
+        await removeDevice(client, instance.incusId, candidate)
+      } catch (error) {
+        portMappingDeviceCleanupFailures++
+        cleanupWarnings.push(`remove device ${candidate}: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    }
   }
   const portMappingsRemoved = portMappings.length > 0
     ? (await prisma.portMapping.deleteMany({ where: { instanceId } })).count
@@ -113,6 +125,7 @@ async function cleanupLegacyAccess(instanceId: number): Promise<DeliveryCleanupS
       }
     }
   })
+  let proxySiteRemoteCleanupFailures = 0
   for (const site of proxySites) {
     if (!site.host.caddyEnabled || !site.host.caddyUsername || !site.host.caddyPassword) continue
     const targetHost = site.host.natPublicIp || site.host.ipAddress || ''
@@ -123,7 +136,12 @@ async function cleanupLegacyAccess(instanceId: number): Promise<DeliveryCleanupS
       username: site.host.caddyUsername,
       password: site.host.caddyPassword
     })
-    await caddy.deleteSite(site.domain)
+    try {
+      await caddy.deleteSite(site.domain)
+    } catch (error) {
+      proxySiteRemoteCleanupFailures++
+      cleanupWarnings.push(`delete proxy site ${site.domain}: ${error instanceof Error ? error.message : String(error)}`)
+    }
   }
   const proxySitesRemoved = proxySites.length > 0
     ? (await prisma.proxySite.deleteMany({ where: { instanceId } })).count
@@ -148,13 +166,17 @@ async function cleanupLegacyAccess(instanceId: number): Promise<DeliveryCleanupS
   return {
     terminalSessionsClosed,
     portMappingsRemoved,
+    portMappingDeviceCleanupFailures,
     proxySitesRemoved,
+    proxySiteRemoteCleanupFailures,
     snapshotsRemoved: snapshotsRemoved.count,
     snapshotPoliciesRemoved: snapshotPoliciesRemoved.count,
     backupPoliciesRemoved: backupPoliciesRemoved.count,
     resourceRiskStateRemoved: resourceRiskStateRemoved.count,
     resourceRiskEventsRemoved: resourceRiskEventsRemoved.count,
-    resourceRiskSamplesRemoved: resourceRiskSamplesRemoved.count
+    resourceRiskSamplesRemoved: resourceRiskSamplesRemoved.count,
+    cleanupWarnings: cleanupWarnings.length,
+    cleanupWarningSamples: cleanupWarnings.slice(0, 10)
   }
 }
 
@@ -276,13 +298,17 @@ async function enqueueReinstall(taskId: number): Promise<void> {
         cleanupSummary,
         closedTerminalSessions: cleanupSummary.terminalSessionsClosed,
         removedPortMappings: cleanupSummary.portMappingsRemoved,
+        failedPortMappingDeviceCleanup: cleanupSummary.portMappingDeviceCleanupFailures,
         removedProxySites: cleanupSummary.proxySitesRemoved,
+        failedProxySiteRemoteCleanup: cleanupSummary.proxySiteRemoteCleanupFailures,
 	        removedSnapshots: cleanupSummary.snapshotsRemoved,
 	        removedSnapshotPolicies: cleanupSummary.snapshotPoliciesRemoved,
 	        removedBackupPolicies: cleanupSummary.backupPoliciesRemoved,
 	        removedResourceRiskState: cleanupSummary.resourceRiskStateRemoved,
 	        removedResourceRiskEvents: cleanupSummary.resourceRiskEventsRemoved,
 	        removedResourceRiskSamples: cleanupSummary.resourceRiskSamplesRemoved,
+	        cleanupWarnings: cleanupSummary.cleanupWarnings,
+	        cleanupWarningSamples: cleanupSummary.cleanupWarningSamples,
 	        trafficUsagePreserved: true,
 	        sellerAccessFrozen: true,
 	        sshAuthorizedKeysClearedByForcedReinstall: true,

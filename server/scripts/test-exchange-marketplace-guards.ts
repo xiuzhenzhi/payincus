@@ -497,6 +497,11 @@ assert(
 	    exchangeDeliveryWorkerSource.includes('instanceRiskEvent.deleteMany') &&
 	    exchangeDeliveryWorkerSource.includes('instanceResourceSample.deleteMany') &&
     exchangeDeliveryWorkerSource.includes('resourceRiskStateRemoved') &&
+	    exchangeDeliveryWorkerSource.includes('portMappingDeviceCleanupFailures') &&
+	    exchangeDeliveryWorkerSource.includes('proxySiteRemoteCleanupFailures') &&
+	    exchangeDeliveryWorkerSource.includes('cleanupWarningSamples') &&
+	    exchangeDeliveryWorkerSource.includes('failedPortMappingDeviceCleanup') &&
+	    exchangeDeliveryWorkerSource.includes('failedProxySiteRemoteCleanup') &&
 	    exchangeDeliveryWorkerSource.includes('affBinding.deleteMany') &&
 	    exchangeDeliveryWorkerSource.includes('instanceTransfer.updateMany') &&
 	    exchangeDeliveryWorkerSource.includes("import { customAlphabet } from 'nanoid'") &&
@@ -523,6 +528,18 @@ assert(
 		    exchangeDeliveryWorkerSource.includes('releaseExchangeOrderEscrow') &&
 		    exchangeDeliveryWorkerSource.includes("status: 'manual_review'"),
   'exchange delivery worker must clean old access/billing bindings with audit evidence, queue forced rebuild for the buyer, rename Incus/display identity for anonymous buyer delivery, preserve traded traffic usage, notify both parties without post-commit rollback, enter confirmation period, auto-settle escrow, and fail into manual review'
+)
+
+const cleanupLegacyAccessSection = sourceBetween(exchangeDeliveryWorkerSource, 'async function cleanupLegacyAccess', 'async function markDeliveryFailed')
+assert(
+  cleanupLegacyAccessSection.includes('try {') &&
+    cleanupLegacyAccessSection.includes('await removeDevice') &&
+    cleanupLegacyAccessSection.includes('portMappingDeviceCleanupFailures++') &&
+    cleanupLegacyAccessSection.includes('await caddy.deleteSite') &&
+    cleanupLegacyAccessSection.includes('proxySiteRemoteCleanupFailures++') &&
+    cleanupLegacyAccessSection.includes('cleanupWarnings.push') &&
+    cleanupLegacyAccessSection.includes('cleanupWarningSamples: cleanupWarnings.slice(0, 10)'),
+  'exchange delivery cleanup must tolerate missing/stale Incus proxy devices or Caddy site cleanup failures, persist DB cleanup, and record warning samples for operator audit'
 )
 
 const enqueueReinstallSection = sourceBetween(exchangeDeliveryWorkerSource, 'async function enqueueReinstall', 'async function finalizeDelivery')
