@@ -50,6 +50,7 @@ interface AdminActionDialog {
   requiresAmount?: boolean
   proofUrl: string
   proofUrlLabel?: string
+  requiresProofUrl?: boolean
 }
 
 const toast = useToast()
@@ -590,7 +591,8 @@ function completeWithdrawal(item: any): void {
     confirmText: '确认完成',
     reason: '人工打款完成',
     reasonLabel: '完成备注',
-    proofUrlLabel: '打款凭证 URL，可选'
+    proofUrlLabel: '打款凭证 URL 或流水号',
+    requiresProofUrl: true
   })
 }
 
@@ -671,6 +673,10 @@ async function submitAdminAction(): Promise<void> {
       toast.warning(dialog.amountLabel ? `${dialog.amountLabel}无效` : '金额无效')
       return
     }
+  }
+  if (dialog.requiresProofUrl && !dialog.proofUrl.trim()) {
+    toast.warning(dialog.proofUrlLabel ? `请输入${dialog.proofUrlLabel}` : '请输入打款凭证')
+    return
   }
   adminActionSubmitting.value = true
   try {
@@ -1012,9 +1018,10 @@ onMounted(loadActive)
             <td class="p-3">{{ item.method || '-' }}</td>
             <td class="p-3">{{ statusLabel(item.status) }}</td>
             <td class="p-3 text-right space-x-2">
-              <button class="btn btn-secondary btn-sm" type="button" @click="approveWithdrawal(item)">通过</button>
-              <button class="btn btn-secondary btn-sm" type="button" @click="completeWithdrawal(item)">完成</button>
-              <button class="btn btn-danger btn-sm" type="button" @click="rejectWithdrawal(item)">拒绝</button>
+              <button v-if="item.status === 'pending'" class="btn btn-secondary btn-sm" type="button" @click="approveWithdrawal(item)">通过</button>
+              <button v-if="['approved', 'paying'].includes(item.status)" class="btn btn-secondary btn-sm" type="button" @click="completeWithdrawal(item)">完成</button>
+              <button v-if="['pending', 'approved'].includes(item.status)" class="btn btn-danger btn-sm" type="button" @click="rejectWithdrawal(item)">拒绝</button>
+              <span v-if="!['pending', 'approved', 'paying'].includes(item.status)" class="text-xs text-themed-muted">无可用操作</span>
             </td>
           </tr>
           <tr v-if="withdrawals.length === 0"><td class="p-6 text-center text-themed-muted" colspan="6">暂无提现。</td></tr>

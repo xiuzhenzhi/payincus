@@ -1547,6 +1547,10 @@ export default async function adminExchangeRoutes(fastify: FastifyInstance) {
     if (!id) return reply.code(400).send({ error: '提现 ID 无效' })
     const user = request.user as { id: number }
     const body = request.body as { proofUrl?: string; remark?: string } | undefined
+    const proofUrl = normalizeText(body?.proofUrl, '', 500)
+    if (!proofUrl) {
+      return reply.code(400).send({ error: '打款凭证 URL 或流水号不能为空' })
+    }
     try {
       const withdrawal = await prisma.$transaction(async tx => {
         const current = await tx.exchangeWithdrawal.findUnique({ where: { id }, include: { wallet: true } })
@@ -1598,7 +1602,7 @@ export default async function adminExchangeRoutes(fastify: FastifyInstance) {
           data: {
             status: 'completed',
             reviewerUserId: user.id,
-            proofUrl: normalizeText(body?.proofUrl, '', 500) || null,
+            proofUrl,
             reviewRemark: normalizeText(body?.remark, current.reviewRemark || '提现已完成'),
             completedAt: new Date()
           }

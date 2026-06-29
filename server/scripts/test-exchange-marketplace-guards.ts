@@ -915,6 +915,9 @@ assert(
 		    adminExchangeRouteSource.includes('用户账号处于风控限制中，不能审核或完成提现') &&
 		    adminExchangeRouteSource.includes('用户存在未完结交易所争议，不能审核或完成提现') &&
 		    adminExchangeRouteSource.includes('用户存在未结算交易或确认期未结束，不能审核或完成提现') &&
+		    adminExchangeRouteSource.includes("const proofUrl = normalizeText(body?.proofUrl, '', 500)") &&
+		    adminExchangeRouteSource.includes('打款凭证 URL 或流水号不能为空') &&
+		    adminExchangeRouteSource.includes('proofUrl,') &&
 		    countOccurrences(adminExchangeRouteSource, 'await assertWithdrawalStillPayable(tx, current.userId)') >= 2 &&
 		    adminExchangeRouteSource.includes('recordExchangeDisputeWalletReleaseInTransaction') &&
 	    adminExchangeRouteSource.includes('auditInTransaction(tx') &&
@@ -1554,6 +1557,17 @@ assert(
   adminExchangeViewSource.includes("const activeDisputeStatuses = ['open', 'processing', 'redelivering']") &&
     countOccurrences(adminExchangeViewSource, 'activeDisputeStatuses.includes(item.status)') >= 3,
   'admin exchange dispute action buttons must treat redelivering disputes as active and still actionable'
+)
+
+assert(
+  adminExchangeViewSource.includes("item.status === 'pending'") &&
+    adminExchangeViewSource.includes("['approved', 'paying'].includes(item.status)") &&
+    adminExchangeViewSource.includes("['pending', 'approved'].includes(item.status)") &&
+    adminExchangeViewSource.includes("!['pending', 'approved', 'paying'].includes(item.status)") &&
+    adminExchangeViewSource.includes("proofUrlLabel: '打款凭证 URL 或流水号'") &&
+    adminExchangeViewSource.includes('requiresProofUrl: true') &&
+    adminExchangeViewSource.includes('请输入${dialog.proofUrlLabel}'),
+  'admin exchange withdrawal actions must be status-driven and require payment proof before marking withdrawals completed'
 )
 
 assert(
