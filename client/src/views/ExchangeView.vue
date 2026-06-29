@@ -11,6 +11,7 @@ import type {
   ExchangeEligibilityResult,
   ExchangeInstanceSnapshot,
   ExchangeListing,
+  ExchangeMarketPackageCategory,
   ExchangeOrder,
   ExchangePublicConfig,
   ExchangeWallet,
@@ -65,6 +66,8 @@ const market = ref<ExchangeListing[]>([])
 const marketLoading = ref(false)
 const marketPage = ref(1)
 const marketTotal = ref(0)
+const marketPackages = ref<ExchangeMarketPackageCategory[]>([])
+const selectedMarketPackageId = ref<number | null>(null)
 const selectedListing = ref<ExchangeListing | null>(null)
 const listingDetailLoading = ref(false)
 const purchaseOptionsLoading = ref(false)
@@ -262,6 +265,32 @@ function bandwidthLabel(snapshot: ExchangeInstanceSnapshot): string {
 
 function snapshotOf(item: ExchangeListing | ExchangeOrder): ExchangeInstanceSnapshot {
   return (item.instance || item.snapshot) as ExchangeInstanceSnapshot
+}
+
+function hostRegionLabel(snapshot: ExchangeInstanceSnapshot): string {
+  return snapshot.host?.location || snapshot.host?.countryCode || '-'
+}
+
+function hostNodeLabel(snapshot: ExchangeInstanceSnapshot): string {
+  return snapshot.host?.name || '-'
+}
+
+function packageLabel(snapshot: ExchangeInstanceSnapshot): string {
+  return `${snapshot.package?.name || '-'} / ${snapshot.packagePlan?.name || '-'}`
+}
+
+function renewalPriceLabel(snapshot: ExchangeInstanceSnapshot): string {
+  if (snapshot.billingPrice === null || snapshot.billingPrice === undefined) return '未设置'
+  const cycle = snapshot.billingCycle && snapshot.billingCycle > 1 ? `/${snapshot.billingCycle}个月` : '/月'
+  return `${money(snapshot.billingPrice)}${cycle}`
+}
+
+function marketPackageFilterClass(packageId: number | null): string {
+  const active = selectedMarketPackageId.value === packageId
+  if (active) return 'border-accent bg-accent text-white'
+  return themeStore.isDark
+    ? 'border-gray-800 text-gray-300 hover:bg-gray-900'
+    : 'border-gray-200 text-gray-700 hover:bg-gray-50'
 }
 
 function networkLabel(snapshot: ExchangeInstanceSnapshot): string {
@@ -465,15 +494,27 @@ async function handleSensitiveVerified(): Promise<void> {
 async function loadMarket(): Promise<void> {
   marketLoading.value = true
   try {
-    const res = await api.exchange.listMarket({ page: marketPage.value, pageSize })
+    const res = await api.exchange.listMarket({
+      page: marketPage.value,
+      pageSize,
+      packageId: selectedMarketPackageId.value
+    })
     market.value = res.items || []
     marketTotal.value = res.total || 0
+    marketPackages.value = res.packages || []
     marketPage.value = res.page || marketPage.value
   } catch (err: any) {
     toast.error(err?.message || '加载交易所市场失败')
   } finally {
     marketLoading.value = false
   }
+}
+
+async function selectMarketPackage(packageId: number | null): Promise<void> {
+  if (selectedMarketPackageId.value === packageId) return
+  selectedMarketPackageId.value = packageId
+  marketPage.value = 1
+  await loadMarket()
 }
 
 async function loadExchangeConfig(): Promise<void> {
@@ -1107,6 +1148,27 @@ onMounted(async () => {
         <div class="text-sm text-themed-muted">共 {{ marketTotal }} 个匿名挂牌</div>
         <button class="btn btn-secondary" type="button" @click="loadMarket">刷新</button>
       </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-sm text-themed-muted">套餐分类</span>
+        <button
+          type="button"
+          class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+          :class="marketPackageFilterClass(null)"
+          @click="selectMarketPackage(null)"
+        >
+          全部
+        </button>
+        <button
+          v-for="pkg in marketPackages"
+          :key="pkg.id"
+          type="button"
+          class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+          :class="marketPackageFilterClass(pkg.id)"
+          @click="selectMarketPackage(pkg.id)"
+        >
+          {{ pkg.name }} · {{ pkg.count }}
+        </button>
+      </div>
       <div v-if="marketLoading" class="card p-8 text-center text-themed-muted">加载中...</div>
       <div v-else-if="market.length === 0" class="card p-8 text-center text-themed-muted">暂无可购买挂牌。</div>
       <div v-else class="grid gap-4 xl:grid-cols-3 lg:grid-cols-2">
@@ -1126,15 +1188,17 @@ onMounted(async () => {
 
           <dl class="grid grid-cols-[88px_minmax(0,1fr)] gap-y-2 text-sm">
             <dt class="font-medium text-themed">地区</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(listing).host.location || snapshotOf(listing).host.countryCode || '-' }}</dd>
+            <dd class="text-themed-muted">{{ hostRegionLabel(snapshotOf(listing)) }}</dd>
             <dt class="font-medium text-themed">节点</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(listing).host.name }}</dd>
+            <dd class="text-themed-muted">{{ hostNodeLabel(snapshotOf(listing)) }}</dd>
             <dt class="font-medium text-themed">套餐</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(listing).package?.name || '-' }} / {{ snapshotOf(listing).packagePlan?.name || '-' }}</dd>
+            <dd class="text-themed-muted">{{ packageLabel(snapshotOf(listing)) }}</dd>
             <dt class="font-medium text-themed">配置</dt>
             <dd class="text-themed-muted">{{ snapshotOf(listing).cpu }}% 核 {{ formatMemory(snapshotOf(listing).memory) }} {{ formatDisk(snapshotOf(listing).disk) }}</dd>
             <dt class="font-medium text-themed">网络</dt>
             <dd class="text-themed-muted">{{ networkLabel(snapshotOf(listing)) }} · {{ bandwidthLabel(snapshotOf(listing)) }}</dd>
+            <dt class="font-medium text-themed">续费价格</dt>
+            <dd class="text-themed-muted">{{ renewalPriceLabel(snapshotOf(listing)) }}</dd>
             <dt class="font-medium text-themed">IP</dt>
             <dd class="text-themed-muted">{{ ipSummary(snapshotOf(listing)) }}</dd>
             <dt class="font-medium text-themed">流量</dt>
@@ -1310,7 +1374,7 @@ onMounted(async () => {
             <div>
               <div class="font-semibold text-themed">{{ order.orderNo }}</div>
               <div class="mt-1 text-sm text-themed-muted">
-                {{ snapshotOf(order).package?.name || '-' }} / {{ snapshotOf(order).packagePlan?.name || '-' }} · {{ statusLabel(order.status) }}
+                {{ packageLabel(snapshotOf(order)) }} · {{ statusLabel(order.status) }}
               </div>
               <div class="mt-2 text-xs text-themed-muted">交割任务：{{ order.deliveryTask ? statusLabel(order.deliveryTask.status) : '等待创建' }} / {{ statusLabel(order.deliveryTask?.step || order.status) }}</div>
               <div v-if="order.deliveryTask?.startedAt || order.deliveryTask?.finishedAt" class="mt-1 text-xs text-themed-muted">
@@ -1593,11 +1657,11 @@ onMounted(async () => {
 
           <dl class="mt-5 grid gap-3 text-sm md:grid-cols-[120px_minmax(0,1fr)_120px_minmax(0,1fr)]">
             <dt class="font-medium text-themed">地区</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(selectedListing).host.location || snapshotOf(selectedListing).host.countryCode || '-' }}</dd>
+            <dd class="text-themed-muted">{{ hostRegionLabel(snapshotOf(selectedListing)) }}</dd>
             <dt class="font-medium text-themed">节点</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(selectedListing).host.name }}</dd>
+            <dd class="text-themed-muted">{{ hostNodeLabel(snapshotOf(selectedListing)) }}</dd>
             <dt class="font-medium text-themed">套餐</dt>
-            <dd class="text-themed-muted">{{ snapshotOf(selectedListing).package?.name || '-' }} / {{ snapshotOf(selectedListing).packagePlan?.name || '-' }}</dd>
+            <dd class="text-themed-muted">{{ packageLabel(snapshotOf(selectedListing)) }}</dd>
             <dt class="font-medium text-themed">配置</dt>
             <dd class="text-themed-muted">{{ snapshotOf(selectedListing).cpu }}% 核 {{ formatMemory(snapshotOf(selectedListing).memory) }} {{ formatDisk(snapshotOf(selectedListing).disk) }}</dd>
             <dt class="font-medium text-themed">网络类型</dt>
@@ -1606,6 +1670,8 @@ onMounted(async () => {
             <dd class="text-themed-muted">{{ ipSummary(snapshotOf(selectedListing)) }}</dd>
             <dt class="font-medium text-themed">带宽</dt>
             <dd class="text-themed-muted">{{ bandwidthLabel(snapshotOf(selectedListing)) }}</dd>
+            <dt class="font-medium text-themed">续费价格</dt>
+            <dd class="text-themed-muted">{{ renewalPriceLabel(snapshotOf(selectedListing)) }}</dd>
             <dt class="font-medium text-themed">剩余流量</dt>
             <dd class="text-themed-muted">{{ bytesLabel(snapshotOf(selectedListing).monthlyTrafficUsed) }} / {{ bytesLabel(snapshotOf(selectedListing).monthlyTrafficLimit) }}</dd>
             <dt class="font-medium text-themed">剩余有效期</dt>

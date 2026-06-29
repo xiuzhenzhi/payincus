@@ -32,6 +32,13 @@ const VALID_OPERATION_TYPES: OperationType[] = [
 ]
 
 const POSITIVE_RESOURCE_ID_PATTERN = /^[1-9]\d*$/
+const RESOURCE_SCOPED_ACCOUNT_OPERATIONS = new Set<OperationType>([
+    'exchange_purchase'
+])
+
+function operationRequiresResourceId(operationType: OperationType): boolean {
+    return isResourceOperation(operationType) || RESOURCE_SCOPED_ACCOUNT_OPERATIONS.has(operationType)
+}
 
 function parsePositiveResourceIdString(value: string): number | null {
     if (!POSITIVE_RESOURCE_ID_PATTERN.test(value)) {
@@ -54,7 +61,7 @@ function normalizeResourceIdForOperation(
     operationType: OperationType,
     value: unknown
 ): { valid: true; resourceId?: number } | { valid: false } {
-    if (isResourceOperation(operationType)) {
+    if (operationRequiresResourceId(operationType)) {
         const resourceId = typeof value === 'string'
             ? parsePositiveResourceIdString(value)
             : parsePositiveResourceIdNumber(value)
@@ -105,7 +112,7 @@ export default async function verificationRoutes(fastify: FastifyInstance) {
             const normalizedResource = normalizeResourceIdForOperation(operationType, resourceId)
             if (!normalizedResource.valid) {
                 return reply.code(400).send({
-                    error: isResourceOperation(operationType)
+                    error: operationRequiresResourceId(operationType)
                         ? 'Resource ID is required for this operation'
                         : 'Resource ID is not allowed for this operation',
                     code: 'INVALID_RESOURCE_ID'
@@ -199,7 +206,7 @@ export default async function verificationRoutes(fastify: FastifyInstance) {
             const normalizedResource = normalizeResourceIdForOperation(operationType, resourceId)
             if (!normalizedResource.valid) {
                 return reply.code(400).send({
-                    error: isResourceOperation(operationType)
+                    error: operationRequiresResourceId(operationType)
                         ? 'Resource ID is required for this operation'
                         : 'Resource ID is not allowed for this operation',
                     code: 'INVALID_RESOURCE_ID'
@@ -263,7 +270,7 @@ export default async function verificationRoutes(fastify: FastifyInstance) {
             const normalizedResource = normalizeResourceIdForOperation(operationType, resourceId)
             if (!normalizedResource.valid) {
                 return reply.code(400).send({
-                    error: isResourceOperation(operationType)
+                    error: operationRequiresResourceId(operationType)
                         ? 'Resource ID is required for this operation'
                         : 'Resource ID is not allowed for this operation',
                     code: 'INVALID_RESOURCE_ID'

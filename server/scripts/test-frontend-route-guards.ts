@@ -434,6 +434,13 @@ assert.ok(
   'shared auth store must not expose customer registration; registration belongs only to RegisterView in the customer entry'
 )
 assert.ok(
+    registerViewSource.includes('function resetTurnstileChallenge(): void') &&
+    registerViewSource.includes('turnstileRef.value?.reset?.()') &&
+    registerViewSource.includes('resetTurnstileChallenge()') &&
+    registerViewSource.includes('error.value = translateError(err)\n    resetTurnstileChallenge()'),
+  'RegisterView must reset only the Turnstile challenge after register failures so invite-code correction keeps the filled form'
+)
+assert.ok(
   adminUsersViewSource.includes('import.meta.env.VITE_CUSTOMER_BASE_URL') &&
     adminUsersViewSource.includes('window.location.origin') &&
     adminUsersViewSource.includes('return `${customerBaseUrl.value}/register/${newInviteCode.value}`') &&

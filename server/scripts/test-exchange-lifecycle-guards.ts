@@ -5,6 +5,7 @@ const exchangeServiceSource = readFileSync(new URL('../src/services/exchange.ts'
 const exchangeDeliveryWorkerSource = readFileSync(new URL('../src/workers/exchangeDeliveryWorker.ts', import.meta.url), 'utf8')
 const adminExchangeRouteSource = readFileSync(new URL('../src/routes/admin-exchange.ts', import.meta.url), 'utf8')
 const exchangeRouteSource = readFileSync(new URL('../src/routes/exchange.ts', import.meta.url), 'utf8')
+const exchangeSmokeSource = readFileSync(new URL('./smoke-exchange-marketplace-e2e.ts', import.meta.url), 'utf8')
 const userExchangeViewSource = readFileSync(new URL('../../client/src/views/ExchangeView.vue', import.meta.url), 'utf8')
 
 function assert(condition: unknown, message: string): void {
@@ -276,6 +277,21 @@ assert(
     userExchangeViewSource.includes('买卖双方前台互不可见') &&
     userExchangeViewSource.includes('不包含卖家原系统、原数据、账号信息或历史订单'),
   'user exchange UI must disclose escrow, forced reinstall, anonymous trade, manual withdrawal review, and no seller data delivery'
+)
+
+assert(
+  exchangeSmokeSource.includes("const allowDestructive = process.env.SMOKE_EXCHANGE_ALLOW_DESTRUCTIVE === '1'") &&
+    exchangeSmokeSource.includes("const allowPurchase = process.env.SMOKE_EXCHANGE_ALLOW_PURCHASE === '1'") &&
+    exchangeSmokeSource.includes("const allowStopForListing = process.env.SMOKE_EXCHANGE_ALLOW_STOP_FOR_LISTING === '1'") &&
+    exchangeSmokeSource.includes("if (!allowDestructive)") &&
+    exchangeSmokeSource.includes("destructive: false") &&
+    exchangeSmokeSource.includes('SMOKE_EXCHANGE_SELLER_INSTANCE_ID') &&
+    exchangeSmokeSource.includes('SMOKE_EXCHANGE_EXPECT_VERIFICATION_GATE') &&
+    exchangeSmokeSource.includes('EXCHANGE_OPERATION_VERIFICATION_REQUIRED') &&
+    exchangeSmokeSource.includes('assertNoIdentityLeak') &&
+    exchangeSmokeSource.includes('SMOKE_EXCHANGE_WAIT_DELIVERY') &&
+    exchangeSmokeSource.includes('pollOrderUntilTerminal'),
+  'exchange smoke must default to read-only checks, require explicit destructive/purchase/stop gates, handle sensitive-operation verification, assert anonymity, and optionally poll delivery'
 )
 
 console.log('exchange lifecycle guards passed')

@@ -1,6 +1,6 @@
 {
   "name": "server",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "PayIncus backend service",
   "type": "module",
   "main": "dist/app.js",
@@ -26,6 +26,7 @@
     "smoke:recharge-callback": "node --import tsx scripts/smoke-recharge-callback.ts",
     "smoke:agent-heartbeat": "node --import tsx scripts/smoke-agent-heartbeat.ts",
     "smoke:agent-release": "node --import tsx scripts/smoke-agent-release.ts",
+    "smoke:exchange-marketplace": "node --import tsx scripts/smoke-exchange-marketplace-e2e.ts",
     "verify:production-db": "node dist/scripts/verify-production-db-readiness.js",
     "verify:production-proof-snapshot": "node dist/scripts/production-proof-snapshot.js",
     "test:accounting-route-id-guards": "node --import tsx scripts/test-accounting-route-id-guards.ts",

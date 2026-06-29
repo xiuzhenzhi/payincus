@@ -186,7 +186,7 @@ assert(
 
 assert(
   exchangeServiceSource.includes('if (!policy.enabled)') &&
-    exchangeServiceSource.includes('return { items: [], total: 0, page, pageSize }') &&
+    exchangeServiceSource.includes('return { items: [], total: 0, page, pageSize, packages: [] }') &&
     exchangeServiceSource.includes("throw new ExchangeError('EXCHANGE_DISABLED', '交易所当前未启用', 403)") &&
     countOccurrences(exchangeServiceSource, "throw new ExchangeError('EXCHANGE_DISABLED'") >= 2,
   'exchange enabled policy must hide public market listings and block listing detail, listing creation, and purchase when disabled'
@@ -206,13 +206,15 @@ assert(
 assert(
 	  exchangeServiceSource.includes('function serializePublicListing') &&
 			exchangeServiceSource.includes('instanceId: _instanceId') &&
-			exchangeServiceSource.includes('eligibilitySnapshot: _eligibilitySnapshot') &&
-			exchangeServiceSource.includes('sanitizePublicInstanceSnapshot') &&
-				exchangeServiceSource.includes('publicSnapshotForbiddenFields') &&
-				exchangeServiceSource.includes('publicSnapshotForbiddenFields.has(key)') &&
-				exchangeServiceSource.includes('sanitizePublicInstanceSnapshot(item as Prisma.JsonValue)') &&
-				exchangeServiceSource.includes('items: items.map(serializePublicListing)') &&
-				exchangeServiceSource.includes('return serializePublicListing(listing)'),
+				exchangeServiceSource.includes('eligibilitySnapshot: _eligibilitySnapshot') &&
+				exchangeServiceSource.includes('sanitizePublicInstanceSnapshot') &&
+					exchangeServiceSource.includes('publicSnapshotRootForbiddenFields') &&
+					exchangeServiceSource.includes('publicSnapshotForbiddenFields') &&
+					exchangeServiceSource.includes('publicSnapshotRootForbiddenFields.has(key)') &&
+					exchangeServiceSource.includes('publicSnapshotForbiddenFields.has(key)') &&
+					exchangeServiceSource.includes('sanitizePublicInstanceSnapshot(item as Prisma.JsonValue, false)') &&
+					exchangeServiceSource.includes('items: items.map(serializePublicListing)') &&
+					exchangeServiceSource.includes('return serializePublicListing(listing)'),
 	  'public exchange market/detail APIs must use anonymous serialization and must not expose internal instance, instance name, or user identity fields'
 )
 
@@ -359,11 +361,11 @@ assert(
     purchaseRecheckSection.includes('EXCHANGE_SELLER_NOT_ACTIVE') &&
     purchaseRecheckSection.includes('assertPolicyAllowlist(policy, instance)') &&
     purchaseRecheckSection.includes('EXCHANGE_INSTANCE_OVERDUE') &&
-    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_EXPIRING_SOON') &&
-    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_RISKY') &&
-    purchaseRecheckSection.includes('EXCHANGE_PACKAGE_INACTIVE') &&
-    purchaseRecheckSection.includes('EXCHANGE_PLAN_INACTIVE') &&
-    purchaseRecheckSection.includes('EXCHANGE_HOST_UNAVAILABLE') &&
+	    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_EXPIRING_SOON') &&
+	    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_RISKY') &&
+	    purchaseRecheckSection.includes('EXCHANGE_PACKAGE_INACTIVE') &&
+	    !purchaseRecheckSection.includes('EXCHANGE_PLAN_INACTIVE') &&
+	    purchaseRecheckSection.includes('EXCHANGE_HOST_UNAVAILABLE') &&
     purchaseRecheckSection.includes('EXCHANGE_INSTANCE_TRAFFIC_OVER_LIMIT') &&
     purchaseRecheckSection.includes('EXCHANGE_SELLER_RESTRICTED') &&
     purchaseRecheckSection.includes('EXCHANGE_ACCOUNT_TRAFFIC_OVER_LIMIT') &&
@@ -374,7 +376,21 @@ assert(
     purchaseRecheckSection.includes("'autoDelistAt'") &&
     purchaseRecheckSection.includes('EXCHANGE_LISTING_EXPIRED') &&
     purchaseRecheckSection.includes('挂牌已到自动下架时间，无法购买'),
-  'exchange purchase must recheck seller/account/instance risk, expiry, auto-delist, allowlist, traffic, storage pool, host/package/plan, and active-order state immediately before locking and charging the buyer'
+  'exchange purchase must recheck seller/account/instance risk, expiry, auto-delist, allowlist, traffic, storage pool, host/package, and active-order state immediately before locking and charging the buyer; sold-out or inactive plans can trade as existing instance rights'
+)
+
+assert(
+  exchangeServiceSource.includes('function visibleListingPackageWhere') &&
+    exchangeServiceSource.includes("path: ['package', 'id']") &&
+    exchangeServiceSource.includes('buildMarketPackageCategories') &&
+    exchangeServiceSource.includes('packages: buildMarketPackageCategories(packageRows)') &&
+    exchangeRouteSource.includes('packageId?: string') &&
+    exchangeRouteSource.includes("parseOptionalPositiveId(request.query.packageId, '套餐')") &&
+    userExchangeViewSource.includes('marketPackages') &&
+    userExchangeViewSource.includes('selectedMarketPackageId') &&
+    userExchangeViewSource.includes('套餐分类') &&
+    userExchangeViewSource.includes('selectMarketPackage'),
+  'exchange market must support package category filtering with accurate backend pagination and frontend filter controls'
 )
 
 assert(
@@ -626,11 +642,20 @@ assert(
 const publicListingReturnSection = sourceBetween(exchangeServiceSource, 'function serializePublicListing', 'function serializeOrder')
 const orderReturnSection = sourceBetween(exchangeServiceSource, 'function serializeOrder', 'function serializeWithdrawal').split('return {')[1] || ''
 const disputeReturnSection = sourceBetween(exchangeServiceSource, 'export async function listExchangeDisputes', 'function serializeWallet').split('items: items.map')[1] || ''
-for (const strippedSnapshotField of ['instanceId', 'name', 'userId', 'user_id', 'sellerUserId', 'buyerUserId', 'creatorUserId', 'username', 'nickname', 'email', 'contact', 'phone', 'registeredAt', 'createdBy', 'user']) {
+for (const strippedRootSnapshotField of ['instanceId', 'name']) {
+  assert(
+    exchangeServiceSource.includes(`'${strippedRootSnapshotField}'`) && exchangeServiceSource.includes('publicSnapshotRootForbiddenFields.has(key)'),
+    `public and participant exchange snapshots must strip root ${strippedRootSnapshotField}`
+  )
+}
+for (const strippedSnapshotField of ['userId', 'user_id', 'sellerUserId', 'buyerUserId', 'creatorUserId', 'username', 'nickname', 'email', 'contact', 'phone', 'registeredAt', 'createdBy', 'user']) {
   assert(
     exchangeServiceSource.includes(`'${strippedSnapshotField}'`) && exchangeServiceSource.includes('publicSnapshotForbiddenFields.has(key)'),
     `public and participant exchange snapshots must strip ${strippedSnapshotField}`
   )
+}
+for (const allowedPublicSnapshotField of ['host:', 'package:', 'packagePlan:']) {
+  assert(exchangeServiceSource.includes(allowedPublicSnapshotField), `public exchange snapshots must keep sale metadata ${allowedPublicSnapshotField}`)
 }
 for (const forbiddenIdentityField of ['buyerUserId', 'sellerUserId', 'creatorUserId', 'userId', 'user_id', 'username', 'nickname', 'email', 'contact', 'phone', 'registeredAt', 'createdBy']) {
   assert(!publicListingReturnSection.includes(forbiddenIdentityField), `public listing response must not expose ${forbiddenIdentityField}`)
@@ -894,11 +919,13 @@ assert(
 			!userExchangeViewSource.includes('window.prompt') &&
 			!userExchangeViewSource.includes('window.confirm') &&
 			userExchangeViewSource.includes('交割已完成，确认期截止') &&
-		userExchangeViewSource.includes('确认期结束后托管款扣除手续费进入卖家交易所余额') &&
-		userExchangeViewSource.includes('匿名交易') &&
-		userExchangeViewSource.includes('强制重装交割') &&
-		userExchangeViewSource.includes('资金托管') &&
-		    userExchangeViewSource.includes("'exchange_purchase'") &&
+			userExchangeViewSource.includes('确认期结束后托管款扣除手续费进入卖家交易所余额') &&
+			userExchangeViewSource.includes('匿名交易') &&
+			userExchangeViewSource.includes('强制重装交割') &&
+			userExchangeViewSource.includes('资金托管') &&
+			userExchangeViewSource.includes('renewalPriceLabel') &&
+			userExchangeViewSource.includes('续费价格') &&
+			    userExchangeViewSource.includes("'exchange_purchase'") &&
 		    userExchangeViewSource.includes("'exchange_withdrawal'") &&
 		    userExchangeViewSource.includes("'exchange_balance_transfer'") &&
 			userExchangeViewSource.includes('交割设置') &&

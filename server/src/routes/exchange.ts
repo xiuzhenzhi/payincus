@@ -226,12 +226,17 @@ export default async function exchangeRoutes(fastify: FastifyInstance) {
   fastify.get('/config', async () => getPublicExchangePolicy())
 
   fastify.get<{
-    Querystring: { page?: string; pageSize?: string }
-  }>('/market', async (request) => {
-    return listExchangeMarket({
-      page: parsePage(request.query.page),
-      pageSize: parsePageSize(request.query.pageSize)
-    })
+    Querystring: { page?: string; pageSize?: string; packageId?: string }
+  }>('/market', async (request, reply) => {
+    try {
+      return await listExchangeMarket({
+        page: parsePage(request.query.page),
+        pageSize: parsePageSize(request.query.pageSize),
+        packageId: parseOptionalPositiveId(request.query.packageId, '套餐')
+      })
+    } catch (error) {
+      return sendExchangeError(reply, error)
+    }
   })
 
   fastify.get<{ Params: { listingId: string } }>('/market/:listingId', async (request, reply) => {

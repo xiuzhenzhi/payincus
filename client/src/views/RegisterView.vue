@@ -96,6 +96,12 @@ function onTurnstileExpire() {
   turnstileToken.value = ''
 }
 
+function resetTurnstileChallenge(): void {
+  if (!turnstileEnabled.value) return
+  turnstileToken.value = ''
+  turnstileRef.value?.reset?.()
+}
+
 // Show email confirmation before sending code
 function handleSendCodeClick(): void {
   if (!registrationEnabled.value) {
@@ -181,18 +187,11 @@ async function sendVerificationCode(): Promise<void> {
         }
       }
     }, 1000)
-    // Reset turnstile after successful send (token can only be used once)
-    if (turnstileRef.value) {
-      turnstileRef.value.reset?.()
-    }
-    turnstileToken.value = ''
+    // Token can only be used once. Keep the form and refresh only the challenge.
+    resetTurnstileChallenge()
   } catch (err: any) {
     error.value = translateError(err)
-    // Reset turnstile if failed
-    if (turnstileRef.value) {
-      turnstileRef.value.reset?.()
-    }
-    turnstileToken.value = ''
+    resetTurnstileChallenge()
   } finally {
     sendingCode.value = false
   }
@@ -312,6 +311,7 @@ async function handleRegister(): Promise<void> {
     setTimeout(() => router.push('/dashboard'), 500)
   } catch (err: any) {
     error.value = translateError(err)
+    resetTurnstileChallenge()
   } finally {
     loading.value = false
   }

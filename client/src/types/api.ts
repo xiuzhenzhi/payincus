@@ -1932,6 +1932,12 @@ export interface ExchangeListing {
   privacyMode: 'anonymous'
 }
 
+export interface ExchangeMarketPackageCategory {
+  id: number
+  name: string
+  count: number
+}
+
 export interface ExchangeDeliveryTask {
   id: number
   status: ExchangeDeliveryTaskStatus

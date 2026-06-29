@@ -221,6 +221,49 @@ function visibleListingWhere(now = new Date()): Prisma.ExchangeListingWhereInput
   }
 }
 
+function visibleListingPackageWhere(packageId?: number | null): Prisma.ExchangeListingWhereInput {
+  const where = visibleListingWhere()
+  if (!packageId) return where
+  return {
+    ...where,
+    snapshot: {
+      path: ['package', 'id'],
+      equals: packageId
+    }
+  }
+}
+
+function getSnapshotPackageCategory(snapshot: Prisma.JsonValue): { id: number; name: string } | null {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null
+  const packageValue = (snapshot as Prisma.JsonObject).package
+  if (!packageValue || typeof packageValue !== 'object' || Array.isArray(packageValue)) return null
+  const packageRecord = packageValue as Prisma.JsonObject
+  const id = Number(packageRecord.id)
+  if (!Number.isSafeInteger(id) || id <= 0) return null
+  const name = typeof packageRecord.name === 'string' && packageRecord.name.trim()
+    ? packageRecord.name.trim()
+    : `套餐 #${id}`
+  return { id, name }
+}
+
+function buildMarketPackageCategories(rows: Array<{ snapshot: Prisma.JsonValue }>) {
+  const categories = new Map<number, { id: number; name: string; count: number }>()
+  for (const row of rows) {
+    const category = getSnapshotPackageCategory(row.snapshot)
+    if (!category) continue
+    const existing = categories.get(category.id)
+    if (existing) {
+      existing.count += 1
+      if (existing.name.startsWith('套餐 #') && !category.name.startsWith('套餐 #')) {
+        existing.name = category.name
+      }
+    } else {
+      categories.set(category.id, { ...category, count: 1 })
+    }
+  }
+  return Array.from(categories.values()).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hans-CN'))
+}
+
 function normalizeFutureAutoDelistAt(value: Date | null | undefined): Date | null {
   if (!value) return null
   if (value.getTime() <= Date.now()) {
@@ -584,9 +627,12 @@ function serializeInstanceSnapshot(instance: {
   }
 }
 
-const publicSnapshotForbiddenFields = new Set([
+const publicSnapshotRootForbiddenFields = new Set([
   'instanceId',
-  'name',
+  'name'
+])
+
+const publicSnapshotForbiddenFields = new Set([
   'userId',
   'user_id',
   'sellerUserId',
@@ -602,15 +648,16 @@ const publicSnapshotForbiddenFields = new Set([
   'user'
 ])
 
-function sanitizePublicInstanceSnapshot(value: Prisma.JsonValue): Prisma.JsonValue {
+function sanitizePublicInstanceSnapshot(value: Prisma.JsonValue, isRoot = true): Prisma.JsonValue {
   if (Array.isArray(value)) {
-    return value.map(item => sanitizePublicInstanceSnapshot(item))
+    return value.map(item => sanitizePublicInstanceSnapshot(item, false))
   }
   if (!value || typeof value !== 'object') return value
   const snapshot: Prisma.JsonObject = {}
   for (const [key, item] of Object.entries(value as Prisma.JsonObject)) {
+    if (isRoot && publicSnapshotRootForbiddenFields.has(key)) continue
     if (publicSnapshotForbiddenFields.has(key)) continue
-    snapshot[key] = sanitizePublicInstanceSnapshot(item as Prisma.JsonValue)
+    snapshot[key] = sanitizePublicInstanceSnapshot(item as Prisma.JsonValue, false)
   }
   return snapshot
 }
@@ -716,7 +763,9 @@ export async function checkExchangeListingEligibility(userId: number, instanceId
   addCheck(checks, 'risk_normal', '实例风控正常', riskOk, '实例处于风控状态，不能挂牌', reasons)
 
   addCheck(checks, 'package_active', '套餐正常', !instance.package || instance.package.active, '实例套餐已停用，不能挂牌', reasons)
-  addCheck(checks, 'plan_active', '方案正常', !instance.packagePlan || (instance.packagePlan.isActive && !instance.packagePlan.isSoldOut), '实例方案已停用或售罄，不能挂牌', reasons)
+  addCheck(checks, 'plan_snapshot_available', '方案快照可展示', true, instance.packagePlan && (!instance.packagePlan.isActive || instance.packagePlan.isSoldOut)
+    ? '实例方案已停用或售罄，但存量实例剩余使用权允许交易'
+    : '实例方案可展示', reasons)
   addCheck(checks, 'host_available', '节点正常', instance.host.status === 'online', '实例所在节点不可用，不能挂牌', reasons)
   const trafficWithinLimit = isInstanceTrafficWithinLimit(instance)
   addCheck(checks, 'traffic_not_over_limit', '实例流量未超限', trafficWithinLimit, instanceTrafficLimitMessage(instance), reasons)
@@ -849,9 +898,6 @@ export async function createExchangeListing(input: ListingInput) {
     }
     if (instance.package && !instance.package.active) {
       throw new ExchangeError('EXCHANGE_PACKAGE_INACTIVE', '实例套餐已停用，不能挂牌')
-    }
-    if (instance.packagePlan && (!instance.packagePlan.isActive || instance.packagePlan.isSoldOut)) {
-      throw new ExchangeError('EXCHANGE_PLAN_INACTIVE', '实例方案已停用或售罄，不能挂牌')
     }
     if (instance.host.status !== 'online') {
       throw new ExchangeError('EXCHANGE_HOST_UNAVAILABLE', '实例所在节点不可用，不能挂牌')
@@ -1027,28 +1073,34 @@ async function buildEligibilitySnapshot(userId: number, instanceId: number, tx: 
   }
 }
 
-export async function listExchangeMarket(options: { page?: number; pageSize?: number } = {}) {
+export async function listExchangeMarket(options: { page?: number; pageSize?: number; packageId?: number | null } = {}) {
   const page = Math.max(1, Math.floor(options.page || 1))
   const pageSize = Math.min(Math.max(1, Math.floor(options.pageSize || 20)), 100)
+  const packageId = options.packageId && options.packageId > 0 ? Math.floor(options.packageId) : null
   const policy = await getPolicy()
   if (!policy.enabled) {
-    return { items: [], total: 0, page, pageSize }
+    return { items: [], total: 0, page, pageSize, packages: [] }
   }
-  const where = visibleListingWhere()
-  const [items, total] = await Promise.all([
+  const where = visibleListingPackageWhere(packageId)
+  const [items, total, packageRows] = await Promise.all([
     prisma.exchangeListing.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       skip: (page - 1) * pageSize,
       take: pageSize
     }),
-    prisma.exchangeListing.count({ where })
+    prisma.exchangeListing.count({ where }),
+    prisma.exchangeListing.findMany({
+      where: visibleListingWhere(),
+      select: { snapshot: true }
+    })
   ])
   return {
     items: items.map(serializePublicListing),
     total,
     page,
-    pageSize
+    pageSize,
+    packages: buildMarketPackageCategories(packageRows)
   }
 }
 
@@ -1227,9 +1279,6 @@ async function assertListingStillPurchasable(
   }
   if (instance.package && !instance.package.active) {
     throw new ExchangeError('EXCHANGE_PACKAGE_INACTIVE', '实例套餐已停用，无法购买')
-  }
-  if (instance.packagePlan && (!instance.packagePlan.isActive || instance.packagePlan.isSoldOut)) {
-    throw new ExchangeError('EXCHANGE_PLAN_INACTIVE', '实例方案已停用或售罄，无法购买')
   }
   if (instance.host.status !== 'online') {
     throw new ExchangeError('EXCHANGE_HOST_UNAVAILABLE', '实例所在节点不可用，无法购买')

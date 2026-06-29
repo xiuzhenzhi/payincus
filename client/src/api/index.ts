@@ -108,6 +108,7 @@ import type {
   ExchangeDispute,
   ExchangeEligibilityResult,
   ExchangeListing,
+  ExchangeMarketPackageCategory,
   ExchangeOrder,
   ExchangePublicConfig,
   ExchangeWallet,
@@ -3354,11 +3355,12 @@ const api = {
   exchange: {
     getConfig: (): Promise<ExchangePublicConfig> =>
       http.get('/exchange/config'),
-    listMarket: (params: { page?: number; pageSize?: number } = {}): Promise<{
+    listMarket: (params: { page?: number; pageSize?: number; packageId?: number | null } = {}): Promise<{
       items: ExchangeListing[]
       total: number
       page: number
       pageSize: number
+      packages: ExchangeMarketPackageCategory[]
     }> => http.get('/exchange/market', { params }),
     getListing: (listingId: number): Promise<ExchangeListing> =>
       http.get(`/exchange/market/${listingId}`),
