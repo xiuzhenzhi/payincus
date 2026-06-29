@@ -6,10 +6,10 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `4f3e2d6e2`
+- 最新发布提交 / Latest Release Commit: `9009dcf8a`
 - 提交日期 / Commit date: 2026-06-29
-- 提交说明 / Commit subject: Release v1.1.5 exchange active dispute guards
-- 最新 tag / Latest tag: `v1.1.5`
+- 提交说明 / Commit subject: Release v1.1.6 exchange traffic audit wording
+- 最新 tag / Latest tag: `v1.1.6`
 
 ## 未发布变更 / Unreleased Changes
 
@@ -17,9 +17,30 @@
 
 ## 历史版本 / Historical Versions
 
+## v1.1.6
+
+- 发布提交 / Release commit: `9009dcf8a`
+- 提交日期 / Commit date: 2026-06-29
+- 提交说明 / Commit subject: Release v1.1.6 exchange traffic audit wording
+
+# v1.1.6
+
+## 修复
+
+- 修复交易所后台人工确认交割完成时的审计详情仍记录为 `trafficBaselineReset` 的问题。
+- 人工交割完成审计现在统一记录 `trafficUsagePreserved: true`，与自动交割和实际交易规则保持一致：买家接收实例时保留挂牌实例当前已用流量和剩余额度，不重置流量基线。
+- 扩展交易所守卫，确保后台人工交割完成路径也必须保留流量口径，避免后续重新引入“流量重置”的错误证据。
+
+## 验证
+
+- `pnpm --filter server test:exchange-marketplace-guards`
+- `pnpm --filter server test:exchange-lifecycle-guards`
+- `pnpm --filter server type-check`
+- `pnpm --filter client type-check`
+
 ## v1.1.5
 
-- 发布提交 / Release commit: `4f3e2d6e2`
+- 发布提交 / Release commit: `cb5c33ccb`
 - 提交日期 / Commit date: 2026-06-29
 - 提交说明 / Commit subject: Release v1.1.5 exchange active dispute guards
 
