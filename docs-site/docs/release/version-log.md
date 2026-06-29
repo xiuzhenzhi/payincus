@@ -6,10 +6,10 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `c626bf3e2`
+- 最新发布提交 / Latest Release Commit: `4f3e2d6e2`
 - 提交日期 / Commit date: 2026-06-29
-- 提交说明 / Commit subject: Release v1.1.4 exchange auto snapshot lock
-- 最新 tag / Latest tag: `v1.1.4`
+- 提交说明 / Commit subject: Release v1.1.5 exchange active dispute guards
+- 最新 tag / Latest tag: `v1.1.5`
 
 ## 未发布变更 / Unreleased Changes
 
@@ -17,9 +17,30 @@
 
 ## 历史版本 / Historical Versions
 
+## v1.1.5
+
+- 发布提交 / Release commit: `4f3e2d6e2`
+- 提交日期 / Commit date: 2026-06-29
+- 提交说明 / Commit subject: Release v1.1.5 exchange active dispute guards
+
+# v1.1.5
+
+## 修复
+
+- 修复交易所未完结争议状态判断遗漏 `redelivering` 的问题，重新交割中的争议现在会被视为未完结争议。
+- 交易所余额划转、提现申请、后台提现审核/完成、买家购买风控和重复争议判断都会拦截 `open / processing / redelivering` 状态。
+- 后台交易所概览的未完结争议统计同步纳入重新交割中的争议。
+- 后台争议列表在 `redelivering` 状态下继续显示处理按钮，避免重新交割中的争议变成不可操作状态。
+
+## 验证
+
+- `pnpm --filter server test:exchange-marketplace-guards`
+- `pnpm --filter server type-check`
+- `pnpm --filter client type-check`
+
 ## v1.1.4
 
-- 发布提交 / Release commit: `c626bf3e2`
+- 发布提交 / Release commit: `03b06df33`
 - 提交日期 / Commit date: 2026-06-29
 - 提交说明 / Commit subject: Release v1.1.4 exchange auto snapshot lock
 

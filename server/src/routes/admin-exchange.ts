@@ -13,6 +13,7 @@ import { instanceExists, renameInstance as renameIncusInstance } from '../lib/in
 
 const MAX_PAGE_SIZE = 100
 const POSITIVE_ID_RE = /^[1-9]\d*$/
+const activeDisputeStatuses = ['open', 'processing', 'redelivering'] as const
 const exchangeReturnSuffix = customAlphabet('abcdefghijklmnopqrstuvwxyz0123456789', 8)
 const exchangeDeliveryProgressSteps = [
   'escrow_paid',
@@ -112,7 +113,7 @@ async function assertWithdrawalStillPayable(tx: Prisma.TransactionClient, userId
     }),
     tx.exchangeDispute.count({
       where: {
-        status: { in: ['open', 'processing'] },
+        status: { in: [...activeDisputeStatuses] },
         order: {
           OR: [
             { buyerUserId: userId },
@@ -997,7 +998,7 @@ export default async function adminExchangeRoutes(fastify: FastifyInstance) {
       prisma.exchangeOrder.count({ where: { status: { in: ['escrowed', 'delivering', 'delivered', 'confirming'] } } }),
       prisma.exchangeOrder.count({ where: { status: { in: ['disputed', 'manual_review'] } } }),
       prisma.exchangeWithdrawal.count({ where: { status: 'pending' } }),
-      prisma.exchangeDispute.count({ where: { status: { in: ['open', 'processing'] } } }),
+      prisma.exchangeDispute.count({ where: { status: { in: [...activeDisputeStatuses] } } }),
       prisma.exchangeDeliveryTask.count({ where: { status: { in: ['PENDING', 'PROCESSING'] } } })
     ])
     return {

@@ -1,6 +1,7 @@
 import { customAlphabet } from 'nanoid'
 import {
   Prisma,
+  type ExchangeDisputeStatus,
   type ExchangeListingStatus,
   type ExchangeOrderStatus
 } from '@prisma/client'
@@ -17,6 +18,7 @@ const maxDescriptionLength = 500
 const listingVisibleStatuses: ExchangeListingStatus[] = ['active']
 const listingBlockingStatuses: ExchangeListingStatus[] = ['active', 'paused', 'locked', 'delivery_failed']
 const orderBlockingStatuses: ExchangeOrderStatus[] = ['escrowed', 'delivering', 'delivered', 'confirming', 'disputed', 'manual_review', 'failed']
+const activeDisputeStatuses: ExchangeDisputeStatus[] = ['open', 'processing', 'redelivering']
 const exchangeRiskWindowDays = 7
 const maxRecentBuyerCancellations = 3
 const maxRecentDisputes = 3
@@ -448,7 +450,7 @@ async function assertExchangeBuyerRiskClear(
   const [openDispute, recentDisputes, recentCancellations] = await Promise.all([
     client.exchangeDispute.findFirst({
       where: {
-        status: { in: ['open', 'processing'] },
+        status: { in: activeDisputeStatuses },
         order: {
           OR: [
             { buyerUserId: userId },
@@ -1776,7 +1778,7 @@ export async function transferExchangeBalanceToUserBalance(input: TransferInput)
     await assertExchangeFundsRiskClear(tx, input.userId, '划转交易所余额')
     const openDisputes = await tx.exchangeDispute.count({
       where: {
-        status: { in: ['open', 'processing'] },
+        status: { in: activeDisputeStatuses },
         order: {
           OR: [
             { buyerUserId: input.userId },
@@ -1920,7 +1922,7 @@ export async function createExchangeWithdrawal(input: WithdrawalInput) {
     await assertExchangeFundsRiskClear(tx, input.userId, '提现')
     const openDisputes = await tx.exchangeDispute.count({
       where: {
-        status: { in: ['open', 'processing'] },
+        status: { in: activeDisputeStatuses },
         order: {
           OR: [
             { buyerUserId: input.userId },
@@ -2135,7 +2137,7 @@ export async function createExchangeDispute(userId: number, orderId: number, rea
       throw new ExchangeError('EXCHANGE_DISPUTE_NOT_ALLOWED', '当前交易状态不能发起争议')
     }
     const activeDispute = await tx.exchangeDispute.findFirst({
-      where: { orderId, status: { in: ['open', 'processing'] } },
+      where: { orderId, status: { in: activeDisputeStatuses } },
       select: { id: true }
     })
     if (activeDispute) {

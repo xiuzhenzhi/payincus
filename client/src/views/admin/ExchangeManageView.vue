@@ -212,6 +212,8 @@ function statusLabel(value: string): string {
   return labels[value] || value
 }
 
+const activeDisputeStatuses = ['open', 'processing', 'redelivering']
+
 function instanceTradeState(item: any): { label: string; className: string } {
   const status = item.instance?.status || item.snapshot?.status || item.eligibilitySnapshot?.instance?.status
   if (item.status === 'active' && status === 'stopped') {
@@ -1034,9 +1036,9 @@ onMounted(loadActive)
             <td class="p-3">{{ statusLabel(item.status) }}</td>
             <td class="p-3">{{ formatDate(item.createdAt) }}</td>
             <td class="p-3 text-right space-x-2">
-              <button v-if="['open', 'processing'].includes(item.status)" class="btn btn-secondary btn-sm" type="button" @click="runDisputeAction(item, 'reject')">拒绝</button>
-              <button v-if="['open', 'processing'].includes(item.status)" class="btn btn-danger btn-sm" type="button" @click="runDisputeAction(item, 'refund')">退款</button>
-              <button v-if="['open', 'processing'].includes(item.status)" class="btn btn-secondary btn-sm" type="button" @click="runDisputeAction(item, 'release')">关闭</button>
+              <button v-if="activeDisputeStatuses.includes(item.status)" class="btn btn-secondary btn-sm" type="button" @click="runDisputeAction(item, 'reject')">拒绝</button>
+              <button v-if="activeDisputeStatuses.includes(item.status)" class="btn btn-danger btn-sm" type="button" @click="runDisputeAction(item, 'refund')">退款</button>
+              <button v-if="activeDisputeStatuses.includes(item.status)" class="btn btn-secondary btn-sm" type="button" @click="runDisputeAction(item, 'release')">关闭</button>
             </td>
           </tr>
           <tr v-if="disputes.length === 0"><td class="p-6 text-center text-themed-muted" colspan="7">暂无争议。</td></tr>

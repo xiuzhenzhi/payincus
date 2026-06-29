@@ -808,10 +808,12 @@ assert(
     adminExchangeRouteSource.includes('/orders/:id/cancel') &&
 	adminExchangeRouteSource.includes('/disputes/:id/refund') &&
 	adminExchangeRouteSource.includes('/disputes/:id/reject') &&
-	adminExchangeRouteSource.includes('/disputes/:id/release') &&
-	adminExchangeRouteSource.includes('claimExchangeDisputeForProcessing') &&
-	adminExchangeRouteSource.includes('restoreProcessingDispute') &&
-	adminExchangeRouteSource.includes("dispute.status === 'processing' && dispute.handledByUserId && dispute.handledByUserId !== actorUserId") &&
+		adminExchangeRouteSource.includes('/disputes/:id/release') &&
+		adminExchangeRouteSource.includes('claimExchangeDisputeForProcessing') &&
+		adminExchangeRouteSource.includes('restoreProcessingDispute') &&
+		adminExchangeRouteSource.includes("const activeDisputeStatuses = ['open', 'processing', 'redelivering'] as const") &&
+		adminExchangeRouteSource.includes('status: { in: [...activeDisputeStatuses] }') &&
+		adminExchangeRouteSource.includes("dispute.status === 'processing' && dispute.handledByUserId && dispute.handledByUserId !== actorUserId") &&
 	adminExchangeRouteSource.includes("{ status: 'open' }") &&
 	adminExchangeRouteSource.includes("{ status: 'processing', handledByUserId: null }") &&
 	adminExchangeRouteSource.includes("{ status: 'processing', handledByUserId: actorUserId }") &&
@@ -935,7 +937,8 @@ assert(
 	    exchangeServiceSource.includes('EXCHANGE_DISPUTE_EXISTS') &&
 	    exchangeServiceSource.includes("type: 'dispute_freeze'") &&
 	    exchangeServiceSource.includes('dispute.freeze') &&
-	    exchangeServiceSource.includes("where: { orderId, status: { in: ['open', 'processing'] } }") &&
+		    exchangeServiceSource.includes("const activeDisputeStatuses: ExchangeDisputeStatus[] = ['open', 'processing', 'redelivering']") &&
+		    exchangeServiceSource.includes('status: { in: activeDisputeStatuses }') &&
     exchangeServiceSource.includes('EXCHANGE_ORDER_STATE_CHANGED'),
   'user dispute creation must use order-level transaction locking, idempotency, active-dispute checks, and conditional order status updates'
 )
@@ -1445,17 +1448,24 @@ assert(
 	    exchangeServiceSource.includes("targetType: 'exchange_wallet_log'") &&
 	    exchangeServiceSource.includes('balanceLogId: balanceLog.id') &&
 	    exchangeServiceSource.includes('dailyWithdrawalCountLimit') &&
-    exchangeServiceSource.includes('EXCHANGE_HAS_OPEN_DISPUTE') &&
-    exchangeServiceSource.includes('assertExchangeBuyerRiskClear') &&
+	    exchangeServiceSource.includes('EXCHANGE_HAS_OPEN_DISPUTE') &&
+	    countOccurrences(exchangeServiceSource, 'status: { in: activeDisputeStatuses }') >= 4 &&
+	    exchangeServiceSource.includes('assertExchangeBuyerRiskClear') &&
 	    exchangeServiceSource.includes('EXCHANGE_BALANCE_SOURCE_RISK') &&
 	    exchangeServiceSource.includes('EXCHANGE_BUYER_DISPUTE_RISK') &&
 	    exchangeServiceSource.includes('EXCHANGE_BUYER_CANCEL_RISK') &&
 		exchangeServiceSource.includes('EXCHANGE_WITHDRAWAL_HAS_UNSETTLED_SALE') &&
 		exchangeServiceSource.includes('存在未结算交易或确认期未结束，不能提现') &&
 		exchangeServiceSource.includes('EXCHANGE_WITHDRAWAL_METHOD_REQUIRED') &&
-		exchangeServiceSource.includes('EXCHANGE_WITHDRAWAL_ACCOUNT_REQUIRED'),
-	  'exchange service must enforce policy allowlists, markup limit, account status, purchase limits, transfer restrictions, withdrawal limits, dispute restrictions, pending-sale withdrawal restrictions, withdrawal profile validation, and buyer/funds risk gates'
-	)
+			exchangeServiceSource.includes('EXCHANGE_WITHDRAWAL_ACCOUNT_REQUIRED'),
+		  'exchange service must enforce policy allowlists, markup limit, account status, purchase limits, transfer restrictions, withdrawal limits, dispute restrictions, pending-sale withdrawal restrictions, withdrawal profile validation, and buyer/funds risk gates'
+		)
+
+assert(
+  adminExchangeViewSource.includes("const activeDisputeStatuses = ['open', 'processing', 'redelivering']") &&
+    countOccurrences(adminExchangeViewSource, 'activeDisputeStatuses.includes(item.status)') >= 3,
+  'admin exchange dispute action buttons must treat redelivering disputes as active and still actionable'
+)
 
 assert(
   countOccurrences(schema, 'idempotencyKey') >= 5 &&
