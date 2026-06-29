@@ -151,9 +151,11 @@ pnpm --filter client type-check passed after keeping exchange delivery task step
 pnpm --filter server test:exchange-marketplace-guards passed after adding Exchange password/terminal sensitive access locks and public config route guard coverage
 pnpm --filter server test:instance-create-turnstile-guards passed during v1.0.8 create-instance Turnstile regression
 pnpm --filter server test:admin-route-guards passed after explicitly whitelisting the public non-sensitive Exchange config endpoint
+pnpm --filter server test:exchange-lifecycle-guards passed after adding source-level lifecycle coverage for buyer balance debit, escrow hold, forced reinstall delivery, escrow release, fee charge, seller exchange wallet credit, withdrawal freeze/manual review, balance transfer, and anonymous responses
 pnpm build passed for v1.0.8
 pnpm docs:build passed for v1.0.8
 pnpm test passed for v1.0.8
+pnpm test passed after adding test:exchange-lifecycle-guards to the root full-test chain
 DATABASE_URL='postgresql://user:pass@localhost:5432/incudal' pnpm --filter server exec prisma validate passed for v1.0.8
 git diff --check passed for v1.0.8
 NODE_ENV=production PORT=3001 SERVE_STATIC_CLIENT=false VITE_API_BASE_URL=/api TRUST_PROXY=true FRONTEND_URL=https://pay.payincus.com ADMIN_FRONTEND_URL=https://admin.payincus.com SITE_URL=https://pay.payincus.com PAYMENT_CALLBACK_BASE_URL=https://pay.payincus.com PAYMENT_CALLBACK_IP_WHITELIST_REQUIRED=false PAYMENT_CALLBACK_SKIP_IP_WHITELIST=false INCUDAL_AGENT_RELEASE_REPOSITORY=VipMaxxxx/payincus RUN_LIVE_CHECKS=0 RUN_DB_CHECKS=0 pnpm verify:production passed for v1.0.8
