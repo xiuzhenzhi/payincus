@@ -364,7 +364,7 @@ assert(
     purchaseRecheckSection.includes('EXCHANGE_INSTANCE_OVERDUE') &&
 	    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_EXPIRING_SOON') &&
 	    purchaseRecheckSection.includes('EXCHANGE_INSTANCE_RISKY') &&
-	    purchaseRecheckSection.includes('EXCHANGE_PACKAGE_INACTIVE') &&
+	    !purchaseRecheckSection.includes('EXCHANGE_PACKAGE_INACTIVE') &&
 	    !purchaseRecheckSection.includes('EXCHANGE_PLAN_INACTIVE') &&
 	    purchaseRecheckSection.includes('EXCHANGE_HOST_UNAVAILABLE') &&
     purchaseRecheckSection.includes('EXCHANGE_INSTANCE_TRAFFIC_OVER_LIMIT') &&
@@ -377,7 +377,21 @@ assert(
     purchaseRecheckSection.includes("'autoDelistAt'") &&
     purchaseRecheckSection.includes('EXCHANGE_LISTING_EXPIRED') &&
     purchaseRecheckSection.includes('挂牌已到自动下架时间，无法购买'),
-  'exchange purchase must recheck seller/account/instance risk, expiry, auto-delist, allowlist, traffic, storage pool, host/package, and active-order state immediately before locking and charging the buyer; sold-out or inactive plans can trade as existing instance rights'
+  'exchange purchase must recheck seller/account/instance risk, expiry, auto-delist, allowlist, traffic, storage pool, host, and active-order state immediately before locking and charging the buyer; inactive packages and sold-out or inactive plans can trade as existing instance rights'
+)
+
+const createExchangeListingSection = sourceBetween(
+  exchangeServiceSource,
+  'export async function createExchangeListing',
+  'async function buildEligibilitySnapshot'
+)
+assert(
+  exchangeServiceSource.includes('package_snapshot_available') &&
+    exchangeServiceSource.includes('实例套餐已停用，但存量实例剩余使用权允许交易') &&
+    exchangeServiceSource.includes('实例方案已停用或售罄，但存量实例剩余使用权允许交易') &&
+    !createExchangeListingSection.includes('EXCHANGE_PACKAGE_INACTIVE') &&
+    !purchaseRecheckSection.includes('EXCHANGE_PACKAGE_INACTIVE'),
+  'exchange listing and purchase must allow inactive package/plan snapshots as existing instance rights while keeping allowlist, storage, host, risk, traffic, task, and expiry checks in force'
 )
 
 assert(

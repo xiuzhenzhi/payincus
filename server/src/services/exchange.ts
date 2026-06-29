@@ -804,7 +804,9 @@ export async function checkExchangeListingEligibility(userId: number, instanceId
   const riskOk = !riskState || (riskState.status === 'normal' && riskState.level === 'normal' && riskState.score < 70)
   addCheck(checks, 'risk_normal', '实例风控正常', riskOk, '实例处于风控状态，不能挂牌', reasons)
 
-  addCheck(checks, 'package_active', '套餐正常', !instance.package || instance.package.active, '实例套餐已停用，不能挂牌', reasons)
+  addCheck(checks, 'package_snapshot_available', '套餐快照可展示', true, instance.package && !instance.package.active
+    ? '实例套餐已停用，但存量实例剩余使用权允许交易'
+    : '实例套餐可展示', reasons)
   addCheck(checks, 'plan_snapshot_available', '方案快照可展示', true, instance.packagePlan && (!instance.packagePlan.isActive || instance.packagePlan.isSoldOut)
     ? '实例方案已停用或售罄，但存量实例剩余使用权允许交易'
     : '实例方案可展示', reasons)
@@ -937,9 +939,6 @@ export async function createExchangeListing(input: ListingInput) {
     const riskState = instance.resourceRiskState
     if (riskState && (riskState.status !== 'normal' || riskState.level !== 'normal' || riskState.score >= 70)) {
       throw new ExchangeError('EXCHANGE_INSTANCE_RISKY', '实例处于风控状态，不能挂牌')
-    }
-    if (instance.package && !instance.package.active) {
-      throw new ExchangeError('EXCHANGE_PACKAGE_INACTIVE', '实例套餐已停用，不能挂牌')
     }
     if (instance.host.status !== 'online') {
       throw new ExchangeError('EXCHANGE_HOST_UNAVAILABLE', '实例所在节点不可用，不能挂牌')
@@ -1318,9 +1317,6 @@ async function assertListingStillPurchasable(
   const riskState = instance.resourceRiskState
   if (riskState && (riskState.status !== 'normal' || riskState.level !== 'normal' || riskState.score >= 70)) {
     throw new ExchangeError('EXCHANGE_INSTANCE_RISKY', '实例处于风控状态，无法购买')
-  }
-  if (instance.package && !instance.package.active) {
-    throw new ExchangeError('EXCHANGE_PACKAGE_INACTIVE', '实例套餐已停用，无法购买')
   }
   if (instance.host.status !== 'online') {
     throw new ExchangeError('EXCHANGE_HOST_UNAVAILABLE', '实例所在节点不可用，无法购买')
