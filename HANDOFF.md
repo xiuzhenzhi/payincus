@@ -19,8 +19,8 @@ This file is a handoff note for a new Codex conversation. Do not include server 
 Use `git log --oneline --decorate -5` as the authoritative current HEAD because this handoff may receive handoff-only commits after product releases. The latest product/docs release baseline at the time of this refresh was:
 
 ```text
-c9834a3e Update version log for v1.2.5
-30e81c4 Release v1.2.5 exchange manual settlement
+ad3f836 Update version log for v1.2.6
+ebf9633 Release v1.2.6 exchange wallet audit atomicity
 ```
 
 GitHub remote `payincus/main` should be aligned with the current local HEAD after each handoff-only refresh. Use `git status --short --branch` and `git ls-remote payincus refs/heads/main` as the source of truth instead of copying this note forward.
@@ -30,10 +30,40 @@ The current local tree should be clean after pulling `payincus/main`. Do not res
 Latest product/docs release boundary at the time of this refresh:
 
 ```text
-30e81c4 Release v1.2.5 exchange manual settlement
+ebf9633 Release v1.2.6 exchange wallet audit atomicity
 ```
 
 ## Latest GitHub Release Work
+
+`v1.2.6` is published on GitHub and has release artifacts. Production OTA task `#129` deployed `v1.2.6` successfully and switched `/opt/incudal/current` to `/opt/incudal/releases/v1.2.6-20260629144634`.
+
+`v1.2.6` fixes the Exchange admin wallet operation atomicity boundary. Admin wallet freeze, unfreeze, and manual adjustment now commit the wallet balance mutation, exchange wallet log, and exchange audit log in the same database transaction. If audit logging fails, the wallet mutation rolls back instead of returning an error after funds already changed.
+
+Release proof for `v1.2.6`:
+
+```text
+OTA manifest v1.2.6 commit ebf9633457c9
+amd64 sha256 25147d9a2ef78a81ee41500c40916421961fa647de74fab7b2bd8e4151986d96
+arm64 sha256 256832162fe17531ca8450281b14b194cf6e05cc031217057f5cc4e58a4c347d
+GitHub Build & Release run 28380138654 -> success
+GitHub CI run 28380127359 -> success for release commit
+GitHub Pages run 28380127544 -> success for release commit
+Version-log commit ad3f836 generated docs/release/version-log.md and docs/en/release/version-log.md for v1.2.6
+GitHub CI run 28380189228 -> success for version-log commit
+GitHub Pages run 28380189102 -> success for version-log commit
+/opt/incudal/current -> /opt/incudal/releases/v1.2.6-20260629144634
+/opt/incudal/current/package.json version 1.2.6
+/opt/incudal/current/server/package.json version 1.2.6
+/opt/incudal/current/version.json -> version/tag v1.2.6, commit ebf9633457c9, deployedAt 2026-06-29T14:46:59.717Z
+systemctl is-active incudal-backend -> active
+public https://pay.payincus.com/api/health -> HTTP 200 status ok
+public https://admin.payincus.com/api/health -> HTTP 200 status ok
+system-update-129.log -> System update completed successfully
+system_update_tasks #129 -> status success, fromVersion v1.2.5, targetVersion v1.2.6, backupPath /opt/incudal/releases/v1.2.5-20260629142322, finishedAt 2026-06-29T14:48:08.003Z
+current-release verify-split-host -> passed during OTA
+current-release verify:production -> passed during OTA
+current-release verify:log-header -> passed during OTA
+```
 
 `v1.2.5` is published on GitHub and has release artifacts. Production OTA task `#128` deployed `v1.2.5` successfully and switched `/opt/incudal/current` to `/opt/incudal/releases/v1.2.5-20260629142322`.
 
@@ -124,9 +154,9 @@ GitHub Pages run 28371822840 -> success
 
 ## Active Exchange Marketplace Work
 
-The current production release contains the `v1.2.5` Exchange Marketplace implementation. Code, release, OTA, non-destructive production checks, and real production Exchange delivery/dispute/refund/rollback evidence have been proven. `v1.2.5` also adds the ordinary admin order manual-release path needed to settle confirming non-dispute orders without waiting for the confirmation timer. Do not perform real manual release or withdrawals without explicit user authorization because those mutate financial state. Remaining proof is narrower: keep capturing seller settlement after confirmation/authorized administrator release and withdrawal review evidence as those paths are exercised.
+The current production release contains the `v1.2.6` Exchange Marketplace implementation. Code, release, OTA, non-destructive production checks, and real production Exchange delivery/dispute/refund/rollback evidence have been proven. `v1.2.5` adds the ordinary admin order manual-release path needed to settle confirming non-dispute orders without waiting for the confirmation timer. `v1.2.6` keeps admin wallet freeze/unfreeze/adjust balance changes and Exchange audit logs in the same transaction. Do not perform real manual release, wallet adjustments, or withdrawals without explicit user authorization because those mutate financial state. Remaining proof is narrower: keep capturing seller settlement after confirmation/authorized administrator release and withdrawal review evidence as those paths are exercised.
 
-Latest production Exchange data snapshot after `v1.2.5` OTA:
+Latest production Exchange data snapshot after `v1.2.6` OTA:
 
 ```text
 exchange_listings count 5; statuses: sold 1, delisted 1, force_delisted 3
