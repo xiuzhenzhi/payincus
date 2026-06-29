@@ -6,16 +6,37 @@
 
 ## 最新发布状态 / Latest Release State
 
-- 最新发布提交 / Latest Release Commit: `6fcf173f1`
+- 最新发布提交 / Latest Release Commit: `c9ed099fc`
 - 提交日期 / Commit date: 2026-06-29
-- 提交说明 / Commit subject: Release v1.2.1 exchange withdrawal hardening
-- 最新 tag / Latest tag: `v1.2.1`
+- 提交说明 / Commit subject: Release v1.2.2 exchange listing hardening
+- 最新 tag / Latest tag: `v1.2.2`
 
 ## 未发布变更 / Unreleased Changes
 
 - 该 tag 与相邻 tag 指向同一提交，未产生额外 Git commit。
 
 ## 历史版本 / Historical Versions
+
+## v1.2.2
+
+- 发布提交 / Release commit: `c9ed099fc`
+- 提交日期 / Commit date: 2026-06-29
+- 提交说明 / Commit subject: Release v1.2.2 exchange listing hardening
+
+# v1.2.2
+
+## 修复
+
+- 优化交易所“上架交易所”入口：运行中的可交易实例不再被简单禁用入口，而是引导用户先暂停实例，暂停完成后重新检测并挂牌。
+- 修复交易所可上架检测的通过项文案：后台和用户侧检查结果现在区分“通过说明”和“失败原因”，避免绿色通过项仍显示失败提示。
+- 强化交易所后台策略保存：强制“实例必须暂停后才能上架”作为固定规则，前端保存和后端接口都会写死为开启，防止旧配置或直接调接口绕过。
+
+## 验证
+
+- `pnpm --filter client type-check`
+- `pnpm --filter server type-check`
+- `pnpm --filter server test:exchange-marketplace-guards`
+- `git diff --check`
 
 ## v1.2.1
 
