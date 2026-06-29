@@ -932,25 +932,33 @@ const adminDisputeRefundRoute = routeBlock(adminExchangeRouteSource, "'/disputes
 assertSourceOrder(
   refundReturnSection,
   [
+    'options: { allowAlreadyRefunded?: boolean } = {}',
+    'const allowAlreadyRefundedReturn = options.allowAlreadyRefunded === true',
     'const orderLocked = await tryAdvisoryTransactionLock',
+    "order.status === 'refunded' && !allowAlreadyRefundedReturn",
+    "order.status === 'refunded' && !order.refundBalanceLogId",
+    "const alreadyRefundedReturn = order.status === 'refunded'",
     "status: 'manual_review'",
     'await stopInstance(client, context.currentIncusId, true)',
     'await renameIncusInstance(client, context.currentIncusId, restoredIncusId)',
     'userId: context.sellerUserId',
     'incusId: restoredIncusId',
     "status: 'stopped'",
+    'context.alreadyRefundedReturn',
     "action: 'order.refund_instance_return'",
+    'alreadyRefundedReturn: context.alreadyRefundedReturn',
     'trafficUsagePreserved: true'
   ],
-  'admin exchange dispute/order refund must return already-delivered instances to the original seller before refunding buyer funds while preserving traffic usage'
+  'admin exchange dispute/order refund must return already-delivered instances to the original seller before refunding buyer funds, including already-refunded repair states, while preserving traffic usage'
 )
 assertSourceOrder(
   refundOrderSection,
   [
     'resolveDispute?: {',
     'existingOrder?.status === targetStatus',
-    'alreadyRefunded: true',
     'const instanceReturn = await returnDeliveredExchangeInstanceForRefund',
+    'allowAlreadyRefunded: true',
+    'alreadyRefunded: true',
     'const resolved = await tx.exchangeDispute.updateMany',
     "status: 'refunded'",
     'disputeReleaseWalletLogId: disputeReleaseLog?.id ?? null'

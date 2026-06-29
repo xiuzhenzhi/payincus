@@ -285,8 +285,10 @@ async function resolveAvailableReturnIncusId(
 async function returnDeliveredExchangeInstanceForRefund(
   orderId: number,
   actorUserId: number,
-  reason: string
+  reason: string,
+  options: { allowAlreadyRefunded?: boolean } = {}
 ): Promise<ExchangeRefundInstanceReturnResult> {
+  const allowAlreadyRefundedReturn = options.allowAlreadyRefunded === true
   const context = await prisma.$transaction(async tx => {
     const orderLocked = await tryAdvisoryTransactionLock(tx, EXCHANGE_ORDER_LOCK_NAMESPACE, orderId)
     if (!orderLocked) throw new Error('交易订单正在处理，请稍后重试')
@@ -308,8 +310,11 @@ async function returnDeliveredExchangeInstanceForRefund(
       }
     })
     if (!order) throw new Error('交易订单不存在')
-    if (['completed', 'refunded', 'cancelled'].includes(order.status)) {
+    if (['completed', 'cancelled'].includes(order.status) || (order.status === 'refunded' && !allowAlreadyRefundedReturn)) {
       throw new Error('当前订单状态不能退款')
+    }
+    if (order.status === 'refunded' && !order.refundBalanceLogId) {
+      throw new Error('订单已退款但缺少退款流水，不能自动退机')
     }
     if (order.instance.status === 'deleted') {
       return { returned: false as const, reason: 'instance_deleted' }
@@ -318,17 +323,29 @@ async function returnDeliveredExchangeInstanceForRefund(
       return { returned: false as const, reason: 'not_delivered_to_buyer' }
     }
 
-    const claimed = await tx.exchangeOrder.updateMany({
-      where: {
-        id: order.id,
-        status: { notIn: ['completed', 'refunded', 'cancelled'] },
-        refundBalanceLogId: null
-      },
-      data: {
-        status: 'manual_review',
-        failureReason: `退款退机处理中：${reason}`
-      }
-    })
+    const alreadyRefundedReturn = order.status === 'refunded'
+    const claimed = alreadyRefundedReturn
+      ? await tx.exchangeOrder.updateMany({
+          where: {
+            id: order.id,
+            status: 'refunded',
+            refundBalanceLogId: { not: null }
+          },
+          data: {
+            failureReason: `已退款订单退机修复中：${reason}`
+          }
+        })
+      : await tx.exchangeOrder.updateMany({
+          where: {
+            id: order.id,
+            status: { notIn: ['completed', 'refunded', 'cancelled'] },
+            refundBalanceLogId: null
+          },
+          data: {
+            status: 'manual_review',
+            failureReason: `退款退机处理中：${reason}`
+          }
+        })
     if (claimed.count !== 1) {
       throw new Error('订单退款状态已变化，请刷新后重试')
     }
@@ -353,6 +370,7 @@ async function returnDeliveredExchangeInstanceForRefund(
       hostId: order.instance.hostId,
       currentIncusId: order.instance.incusId,
       currentDisplayName: order.instance.name,
+      alreadyRefundedReturn,
       preferredIncusId: resolveOriginalSellerIncusId(deliveryAudits, order.sellerUserId),
       restoredDisplayName: resolveReturnDisplayName(order.orderNo, order.snapshot, order.listing.snapshot)
     }
@@ -409,6 +427,12 @@ async function returnDeliveredExchangeInstanceForRefund(
       if (updatedInstance.count !== 1) {
         throw new Error('实例归属已变化，不能自动退回；请人工核对')
       }
+      if (context.alreadyRefundedReturn) {
+        await tx.exchangeOrder.update({
+          where: { id: orderId },
+          data: { failureReason: `已退款订单已退机：${reason}` }
+        })
+      }
 
       const auditLog = await tx.exchangeAuditLog.create({
         data: {
@@ -426,6 +450,7 @@ async function returnDeliveredExchangeInstanceForRefund(
             preferredIncusId: context.preferredIncusId,
             restoredDisplayName: context.restoredDisplayName,
             previousDisplayName: context.currentDisplayName,
+            alreadyRefundedReturn: context.alreadyRefundedReturn,
             stoppedBeforeReturn: true,
             trafficUsagePreserved: true,
             note: 'Dispute/order refund returned the delivered instance ownership to the original seller before refunding buyer funds'
@@ -478,6 +503,9 @@ async function refundExchangeOrder(
       select: { id: true, status: true, refundBalanceLogId: true }
     })
     if (existingOrder?.status === targetStatus && existingOrder.refundBalanceLogId) {
+      const instanceReturn = await returnDeliveredExchangeInstanceForRefund(orderId, actorUserId, reason, {
+        allowAlreadyRefunded: true
+      })
       return prisma.$transaction(async tx => {
         const orderLocked = await tryAdvisoryTransactionLock(tx, EXCHANGE_ORDER_LOCK_NAMESPACE, orderId)
         if (!orderLocked) throw new Error('交易订单正在处理，请稍后重试')
@@ -508,6 +536,8 @@ async function refundExchangeOrder(
           orderId,
           walletLogId: disputeReleaseLog.id,
           refundBalanceLogId: existingOrder.refundBalanceLogId,
+          deliveredBuyerInstanceReturned: instanceReturn.returned,
+          instanceReturn,
           alreadyRefunded: true
         })
         return tx.exchangeOrder.findUniqueOrThrow({ where: { id: orderId } })
