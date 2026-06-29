@@ -6,16 +6,57 @@ This page is generated from Git tags and commits to show system version history.
 
 ## Latest Release State / 最新发布状态
 
-- Latest Release Commit / 最新发布提交: `0c1eaa0be`
+- Latest Release Commit / 最新发布提交: `f2fc3bc32`
 - Commit date / 提交日期: 2026-06-29
-- Commit subject / 提交说明: Release v1.1.0 exchange delivery fix
-- Latest tag / 最新 tag: `v1.1.0`
+- Commit subject / 提交说明: Release v1.1.2 exchange traffic wording
+- Latest tag / 最新 tag: `v1.1.2`
 
 ## Unreleased Changes / 未发布变更
 
 - This tag points to the same commit as the adjacent tag, so there are no additional Git commits.
 
 ## Historical Versions / 历史版本
+
+## v1.1.2
+
+- Release commit / 发布提交: `f2fc3bc32`
+- Commit date / 提交日期: 2026-06-29
+- Commit subject / 提交说明: Release v1.1.2 exchange traffic wording
+
+# v1.1.2
+
+## 修复
+
+- 后台交易所人工确认交割提示改为“确认已用流量和剩余额度原样保留”，不再要求管理员核验“流量基线重置”。
+- 生产 proof 中的交易所真实 E2E 记录模板同步改为流量用量保留，避免验收记录和实际交割规则冲突。
+- 更新交易所生命周期守卫，防止后续代码或测试重新把交割流程改回流量重置。
+
+## 验证
+
+- `pnpm --filter server test:exchange-lifecycle-guards`
+- `pnpm --filter server test:production-proof-center-guards`
+- `pnpm --filter server test:exchange-marketplace-guards`
+- `pnpm --filter server type-check`
+- `pnpm --filter client type-check`
+
+## v1.1.1
+
+- Release commit / 发布提交: `eb6e228f7`
+- Commit date / 提交日期: 2026-06-29
+- Commit subject / 提交说明: fix exchange refund return flow
+
+# v1.1.1
+
+## 修复
+
+- 实例列表不再显示“可上架 / 需先暂停 / 不可上架”这类交易所资格提示标签，避免普通实例列表被交易所检测状态干扰。
+- 实例列表仍保留真实交易状态标签，例如“交易所挂牌中”“交易所暂停中”“交易锁定中”“交割异常”，并继续锁定挂牌或交割中的实例操作。
+- 交易所交割不再重置实例月流量用量、流量状态、流量基线和每日流量记录，买家接收的实例会保留挂牌时的已用流量和剩余额度。
+- 交易所争议退款/订单退款如果发生在实例已交割给买家之后，会先停机并把实例归属、Incus 名称和管理权退回原卖家，再执行买家退款；退回过程保留当前流量用量。
+
+## 验证
+
+- 已确认生产真实交易所流程完成过一次交割：订单进入托管、强制重装、清理旧访问和绑定、转移实例归属、重建账单并进入确认期。
 
 ## v1.1.0
 

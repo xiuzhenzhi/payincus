@@ -141,11 +141,11 @@ assertSourceOrder(
     'userId: task.buyerUserId',
     'incusId: newIncusId',
     "type: 'newPurchase'",
-    "step: 'reset_traffic_baseline'",
+    "step: 'preserve_traffic_usage'",
     "status: 'confirming'",
     "status: 'COMPLETED'"
   ],
-  'exchange delivery must wait for forced reinstall completion before anonymous rename, owner transfer, billing rebuild, traffic reset, and confirmation'
+  'exchange delivery must wait for forced reinstall completion before anonymous rename, owner transfer, billing rebuild, traffic preservation, and confirmation'
 )
 
 assert(

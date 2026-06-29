@@ -490,11 +490,11 @@ function completeDelivery(task: any): void {
   openAdminAction({
     kind: 'completeDelivery',
     title: '人工确认交割完成',
-    message: '仅在管理员已线下核验实例完成重装、访问权限清理、owner 转移、匿名重命名、账单归属和流量基线重置后使用。后台会再次校验买家归属和匿名标识，确认后订单进入确认期。',
+    message: '仅在管理员已线下核验实例完成重装、访问权限清理、owner 转移、匿名重命名、账单归属，并确认已用流量和剩余额度原样保留后使用。后台会再次校验买家归属和匿名标识，确认后订单进入确认期。',
     target: task,
     confirmText: '确认交割完成',
     reasonLabel: '完成说明',
-    reasonPlaceholder: '填写线下核验依据，例如已确认实例 owner、重装凭据、账单归属和流量基线',
+    reasonPlaceholder: '填写线下核验依据，例如已确认实例 owner、重装凭据、账单归属和流量用量保留',
     requiresReason: true
   })
 }

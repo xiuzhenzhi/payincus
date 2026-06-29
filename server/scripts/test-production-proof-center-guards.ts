@@ -74,7 +74,7 @@ assert.ok(
     view.includes('交易所 live E2E 记录模板') &&
     view.includes('ENV_FILE=/opt/incudal/.env pnpm --filter server verify:production-db') &&
     view.includes('卖家测试实例已暂停并通过交易所检测') &&
-    view.includes('交割任务完成强制重装、匿名重命名、owner 转移、买家账单重建、流量基线重置') &&
+    view.includes('交割任务完成强制重装、匿名重命名、owner 转移、买家账单重建，并确认已用流量和剩余额度原样保留') &&
     view.includes('LIVE_LSKY_CLEANUP_WAIVER_REF="operator waiver ref"') &&
     view.includes('BACKEND_URL="$PRODUCTION_BACKEND_LOOPBACK_URL"') &&
     view.includes('ENV_FILE=/opt/incudal/.env PROOF_SINCE_HOURS=24 pnpm verify:production-proof-snapshot') &&
