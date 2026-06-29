@@ -19,7 +19,7 @@ This file is a handoff note for a new Codex conversation. Do not include server 
 Use `git log --oneline --decorate -5` as the authoritative current HEAD because this handoff may receive handoff-only commits after product releases. The latest product/docs release baseline at the time of this refresh was:
 
 ```text
-34f07dd6e Update version log for v1.2.1
+90f00cd3b Update version log for v1.2.2
 ```
 
 GitHub remote `payincus/main` should be aligned with the current local HEAD after each handoff-only refresh. Use `git status --short --branch` and `git ls-remote payincus refs/heads/main` as the source of truth instead of copying this note forward.
@@ -29,38 +29,42 @@ The current local tree should be clean after pulling `payincus/main`. Do not res
 Latest product/docs release boundary at the time of this refresh:
 
 ```text
-6fcf173f1 Release v1.2.1 exchange withdrawal hardening
+c9ed099fc Release v1.2.2 exchange listing hardening
 ```
 
 ## Latest GitHub Release Work
 
-`v1.2.1` is published on GitHub and has release artifacts. Production OTA task `#124` deployed `v1.2.1` successfully and switched `/opt/incudal/current` to `/opt/incudal/releases/v1.2.1-20260629113553`.
+`v1.2.2` is published on GitHub and has release artifacts. Production OTA task `#125` deployed `v1.2.2` successfully and switched `/opt/incudal/current` to `/opt/incudal/releases/v1.2.2-20260629120104`.
 
-`v1.2.1` hardens the Exchange Marketplace withdrawal path after the `v1.2.0` rollout: admin withdrawal action buttons are status-driven, completed/rejected terminal withdrawals no longer expose action buttons, and completing a withdrawal now requires a payment proof URL or transfer reference in both the admin UI and backend route.
+`v1.2.2` batches the Exchange Marketplace follow-up fixes after the `v1.2.1` rollout: running-but-eligible instances now open the stop-first listing flow instead of a dead entry, eligibility checks show distinct pass messages instead of green failure text, and the admin policy save path now force-writes paused-only listing as a fixed rule in both the UI payload and backend route.
 
-Production proof for task `#124`:
+Production proof for task `#125`:
 
 ```text
-OTA manifest v1.2.1 commit 6fcf173f1018
-amd64 sha256 e85bf6a3c8b6f8c419cddf857eb871790cf8a2c6a46d56e84173471fbe1e10de
-arm64 sha256 554a2af3394328c097c31dd3320fd34dc469998a12100d39c46bff43c24e4281
-/opt/incudal/current -> /opt/incudal/releases/v1.2.1-20260629113553
-/opt/incudal/current/package.json version 1.2.1
-/opt/incudal/current/server/package.json version 1.2.1
+OTA manifest v1.2.2 commit c9ed099fc50c
+amd64 sha256 f81d9bef94f714e0b4505794b8b1d08d4b390d4cca8591d9f77ee3b4d5dc73c7
+arm64 sha256 983d70ce1aa2329f2c5831b3210b6e6d05c87114b18a1e8208c0caa90a08f96e
+/opt/incudal/current -> /opt/incudal/releases/v1.2.2-20260629120104
+/opt/incudal/current/package.json version 1.2.2
+/opt/incudal/current/server/package.json version 1.2.2
 systemctl is-active incudal-backend -> active
 local http://127.0.0.1:3001/api/health -> status ok
 public https://pay.payincus.com/api/health -> HTTP 200 status ok
 public https://admin.payincus.com/api/health -> HTTP 200 status ok
-system-update-124.log -> System update completed successfully
-system_update_tasks #124 -> status success, fromVersion v1.2.0, targetVersion v1.2.1, backupPath /opt/incudal/releases/v1.2.0-20260629111508, finishedAt 2026-06-29T11:37:25.755Z
+system-update-125.log -> System update completed successfully
+system_update_tasks #125 -> status success, fromVersion v1.2.1, targetVersion v1.2.2, backupPath /opt/incudal/releases/v1.2.1-20260629113553, finishedAt 2026-06-29T12:02:37.414Z
 current-release pnpm verify:production -> passed
 current-release pnpm verify:log-header -> passed
-docs version-log source contains v1.2.1 and Release v1.2.1 exchange withdrawal hardening
+docs version-log source contains v1.2.2 and Release v1.2.2 exchange listing hardening
+GitHub Build & Release run 28370223920 -> success
+GitHub CI run 28370221221 -> success
+GitHub docs version-log CI run 28370284370 -> success
+GitHub Pages run 28370284389 -> success
 ```
 
 ## Active Exchange Marketplace Work
 
-The current worktree contains the `v1.2.1` Exchange Marketplace implementation. Code, release, OTA, non-destructive production checks, and at least one real production Exchange delivery path have been proven. Remaining proof is narrower: keep capturing real dispute refund/release, seller settlement, withdrawal review, and rollback/retry evidence as those paths are exercised.
+The current worktree contains the `v1.2.2` Exchange Marketplace implementation. Code, release, OTA, non-destructive production checks, and at least one real production Exchange delivery path have been proven. Remaining proof is narrower: keep capturing real dispute refund/release, seller settlement, withdrawal review, and rollback/retry evidence as those paths are exercised.
 
 Implemented local scope:
 
@@ -76,6 +80,10 @@ Implemented local scope:
 Latest local proof:
 
 ```text
+pnpm --filter server test:exchange-marketplace-guards passed for v1.2.2 exchange listing hardening
+pnpm --filter server type-check passed for v1.2.2 exchange listing hardening
+pnpm --filter client type-check passed for v1.2.2 exchange listing hardening
+git diff --check passed for v1.2.2 exchange listing hardening
 pnpm --filter server test:exchange-marketplace-guards passed
 pnpm --filter server test:admin-route-guards passed
 pnpm --filter server type-check passed
